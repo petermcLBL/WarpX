@@ -40,5 +40,9 @@ USE_PSATD = FALSE
 USE_PSATD_PICSAR = FALSE
 USE_RZ = FALSE
 
+# added by petermc
+USE_SPIRAL = TRUE
+USE_FULL_SPIRAL = FALSE
+
 WARPX_HOME := .
 include $(WARPX_HOME)/Source/Make.WarpX

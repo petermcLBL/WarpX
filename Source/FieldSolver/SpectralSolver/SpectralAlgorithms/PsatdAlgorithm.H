@@ -29,6 +29,16 @@ class PsatdAlgorithm : public SpectralBaseAlgorithm
                          const bool update_with_rho);
         // Redefine functions from base class
         virtual void pushSpectralFields(SpectralFieldData& f) const override final;
+#if WARPX_USE_FULL_SPIRAL
+  virtual void stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& EfieldNew,
+                          std::array<std::unique_ptr<amrex::MultiFab>,3>& BfieldNew,
+                          std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield,
+                          std::array<std::unique_ptr<amrex::MultiFab>,3>& Bfield,
+                          std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield_avg,
+                          std::array<std::unique_ptr<amrex::MultiFab>,3>& Bfield_avg,
+                          std::array<std::unique_ptr<amrex::MultiFab>,3>& current,
+                          std::unique_ptr<amrex::MultiFab>& rho );
+#endif
         virtual int getRequiredNumberOfFields() const override final {
             return SpectralFieldIndex::n_fields;
         }

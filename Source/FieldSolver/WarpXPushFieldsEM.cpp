@@ -43,32 +43,96 @@ namespace {
 
         using Idx = SpectralAvgFieldIndex;
 
+        // BEGIN DEBUG
+        for (MFIter mfi(*rho); mfi.isValid(); ++mfi){
+          Array4<Real> Ex4 = (*Efield[0])[mfi].array();
+          Array4<Real> Ey4 = (*Efield[1])[mfi].array();
+          Array4<Real> Ez4 = (*Efield[2])[mfi].array();
+          Array4<Real> Bx4 = (*Bfield[0])[mfi].array();
+          Array4<Real> By4 = (*Bfield[1])[mfi].array();
+          Array4<Real> Bz4 = (*Bfield[2])[mfi].array();
+          Array4<Real> Jx4 = (*current[0])[mfi].array();
+          Array4<Real> Jy4 = (*current[1])[mfi].array();
+          Array4<Real> Jz4 = (*current[2])[mfi].array();
+          Array4<Real> rho4 = (*rho)[mfi].array();
+
+          std::cout << "At (10, 11, 12): " << std::endl;
+          std::cout << "E = "
+                    << Ex4(10, 11, 12, 0) << ", "
+                    << Ey4(10, 11, 12, 0) << ", "
+                    << Ez4(10, 11, 12, 0)
+                    << std::endl;
+          std::cout << "B = "
+                    << Bx4(10, 11, 12, 0) << ", "
+                    << By4(10, 11, 12, 0) << ", "
+                    << Bz4(10, 11, 12, 0)
+                    << std::endl;
+          std::cout << "J = "
+                    << Jx4(10, 11, 12, 0) << ", "
+                    << Jy4(10, 11, 12, 0) << ", "
+                    << Jz4(10, 11, 12, 0)
+                    << std::endl;
+          std::cout << "rho = "
+                    << rho4(10, 11, 12, 0) << ", "
+                    << rho4(10, 11, 12, 1)
+                    << std::endl;
+        }
+        // END DEBUG
+
+#if WARPX_USE_FULL_SPIRAL
+        std::array< std::unique_ptr<amrex::MultiFab>, 3 > EfieldNew;
+        std::array< std::unique_ptr<amrex::MultiFab>, 3 > BfieldNew;
+        for (int idir = 0; idir < 3; idir++)
+          {
+            EfieldNew[idir].reset( new MultiFab(Efield[idir]->boxArray(),
+                                                Efield[idir]->DistributionMap(),
+                                                Efield[idir]->nComp(),
+                                                Efield[idir]->nGrow()) );
+            BfieldNew[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
+                                                Bfield[idir]->DistributionMap(),
+                                                Bfield[idir]->nComp(),
+                                                Bfield[idir]->nGrow()) );
+          }
+        solver.stepSpiral(EfieldNew, BfieldNew,
+                          Efield, Bfield, Efield_avg, Bfield_avg, current, rho);
+#endif
         // Perform forward Fourier transform
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(*Efield[0], Idx::Ex,
                                 *Efield[1], Idx::Ey);
 #else
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on Ex" << std::endl;
         solver.ForwardTransform(*Efield[0], Idx::Ex);
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on Ey" << std::endl;
         solver.ForwardTransform(*Efield[1], Idx::Ey);
 #endif
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on Ez" << std::endl;
         solver.ForwardTransform(*Efield[2], Idx::Ez);
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(*Bfield[0], Idx::Bx,
                                 *Bfield[1], Idx::By);
 #else
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on Bx" << std::endl;
         solver.ForwardTransform(*Bfield[0], Idx::Bx);
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on By" << std::endl;
         solver.ForwardTransform(*Bfield[1], Idx::By);
 #endif
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on Bz" << std::endl;
         solver.ForwardTransform(*Bfield[2], Idx::Bz);
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(*current[0], Idx::Jx,
                                 *current[1], Idx::Jy);
 #else
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on Jx" << std::endl;
         solver.ForwardTransform(*current[0], Idx::Jx);
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on Jy" << std::endl;
         solver.ForwardTransform(*current[1], Idx::Jy);
 #endif
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on Jz" << std::endl;
         solver.ForwardTransform(*current[2], Idx::Jz);
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on rho_old" << std::endl;
         solver.ForwardTransform(*rho, Idx::rho_old, 0);
+        std::cout << "PushPSATDSinglePatch calling ForwardTransform on rho_new" << std::endl;
         solver.ForwardTransform(*rho, Idx::rho_new, 1);
 #ifdef WARPX_DIM_RZ
         if (WarpX::use_kspace_filter) {
@@ -78,23 +142,31 @@ namespace {
         }
 #endif
         // Advance fields in spectral space
+        std::cout << "PushPSATDSinglePatch calling solver.pushSpectralFields()" << std::endl;
         solver.pushSpectralFields();
+        std::cout << "PushPSATDSinglePatch called solver.pushSpectralFields()" << std::endl;
         // Perform backward Fourier Transform
 #ifdef WARPX_DIM_RZ
         solver.BackwardTransform(*Efield[0], Idx::Ex,
                                  *Efield[1], Idx::Ey);
 #else
+        std::cout << "PushPSATDSinglePatch calling BackwardTransform on Ex" << std::endl;
         solver.BackwardTransform(*Efield[0], Idx::Ex);
+        std::cout << "PushPSATDSinglePatch calling BackwardTransform on Ey" << std::endl;
         solver.BackwardTransform(*Efield[1], Idx::Ey);
 #endif
+        std::cout << "PushPSATDSinglePatch calling BackwardTransform on Ez" << std::endl;
         solver.BackwardTransform(*Efield[2], Idx::Ez);
 #ifdef WARPX_DIM_RZ
         solver.BackwardTransform(*Bfield[0], Idx::Bx,
                                  *Bfield[1], Idx::By);
 #else
+        std::cout << "PushPSATDSinglePatch calling BackwardTransform on Bx" << std::endl;
         solver.BackwardTransform(*Bfield[0], Idx::Bx);
+        std::cout << "PushPSATDSinglePatch calling BackwardTransform on By" << std::endl;
         solver.BackwardTransform(*Bfield[1], Idx::By);
 #endif
+        std::cout << "PushPSATDSinglePatch calling BackwardTransform on Bz" << std::endl;
         solver.BackwardTransform(*Bfield[2], Idx::Bz);
 
 #ifndef WARPX_DIM_RZ
@@ -108,6 +180,9 @@ namespace {
             solver.BackwardTransform(*Bfield_avg[2], Idx::Bz_avg);
         }
 #endif
+
+        // FIXME: Now find differences between Efield and EfieldNew,
+        // Bfield and BfieldNew.
     }
 }
 
@@ -129,11 +204,15 @@ void
 WarpX::PushPSATD (int lev, amrex::Real /* dt */)
 {
     // Update the fields on the fine and coarse patch
+  std::cout << "WarpX::PushPSATD calling PushPSATDSinglePatch on fp" << std::endl;
     PushPSATDSinglePatch( *spectral_solver_fp[lev],
         Efield_fp[lev], Bfield_fp[lev], Efield_avg_fp[lev], Bfield_avg_fp[lev], current_fp[lev], rho_fp[lev] );
+  std::cout << "WarpX::PushPSATD called PushPSATDSinglePatch on fp" << std::endl;
     if (spectral_solver_cp[lev]) {
+      std::cout << "WarpX::PushPSATD calling PushPSATDSinglePatch on cp" << std::endl;
         PushPSATDSinglePatch( *spectral_solver_cp[lev],
              Efield_cp[lev], Bfield_cp[lev], Efield_avg_cp[lev], Bfield_avg_cp[lev], current_cp[lev], rho_cp[lev] );
+      std::cout << "WarpX::PushPSATD called PushPSATDSinglePatch on cp" << std::endl;
     }
 }
 #endif

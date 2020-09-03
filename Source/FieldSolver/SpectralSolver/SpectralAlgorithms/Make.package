@@ -9,4 +9,13 @@ ifeq ($(USE_RZ),TRUE)
   CEXE_sources += PsatdAlgorithmRZ.cpp
 endif
 
+ifeq ($(WARPX_USE_SPIRAL),TRUE)
+  CEXE_sources += warpx-symbol_rho_80.c
+  CEXE_sources += warpx-symbol_norho_80.c
+endif
+
+ifeq ($(WARPX_USE_FULL_SPIRAL),TRUE)
+  CEXE_sources += warpx-fullstep_rho_80.c
+endif
+
 VPATH_LOCATIONS   += $(WARPX_HOME)/Source/FieldSolver/SpectralSolver/SpectralAlgorithms

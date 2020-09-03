@@ -107,4 +107,24 @@ SpectralSolver::pushSpectralFields(){
     algorithm->pushSpectralFields( field_data );
 }
 
+#if WARPX_USE_FULL_SPIRAL
+void
+SpectralSolver::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& EfieldNew,
+                           std::array<std::unique_ptr<amrex::MultiFab>,3>& BfieldNew,
+                           std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield,
+                           std::array<std::unique_ptr<amrex::MultiFab>,3>& Bfield,
+                           std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield_avg,
+                           std::array<std::unique_ptr<amrex::MultiFab>,3>& Bfield_avg,
+                           std::array<std::unique_ptr<amrex::MultiFab>,3>& current,
+                           std::unique_ptr<amrex::MultiFab>& rho )
+{
+  WARPX_PROFILE("SpectralSolver::stepSpiral");
+  // Virtual function: the actual function used here depends
+  // on the sub-class of `SpectralBaseAlgorithm` that was
+  // initialized in the constructor of `SpectralSolver`
+  algorithm->stepSpiral(EfieldNew, BfieldNew,
+                        Efield, Bfield, Efield_avg, Bfield_avg, current, rho);
+}
+#endif
+
 #endif // WARPX_USE_PSATD

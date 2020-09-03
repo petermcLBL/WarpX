@@ -60,6 +60,17 @@ class SpectralSolver
          */
         void pushSpectralFields();
 
+#if WARPX_USE_FULL_SPIRAL
+  void stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& EfieldNew,
+                  std::array<std::unique_ptr<amrex::MultiFab>,3>& BfieldNew,
+                  std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield,
+                  std::array<std::unique_ptr<amrex::MultiFab>,3>& Bfield,
+                  std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield_avg,
+                  std::array<std::unique_ptr<amrex::MultiFab>,3>& Bfield_avg,
+                  std::array<std::unique_ptr<amrex::MultiFab>,3>& current,
+                  std::unique_ptr<amrex::MultiFab>& rho );
+#endif
+  
         /**
           * \brief Public interface to call the member function ComputeSpectralDivE
           * of the base class SpectralBaseAlgorithm from objects of class SpectralSolver

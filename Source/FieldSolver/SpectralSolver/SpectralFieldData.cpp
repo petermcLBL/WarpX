@@ -67,6 +67,7 @@ SpectralFieldData::SpectralFieldData( const amrex::BoxArray& realspace_ba,
         // the FFT plan, the valid dimensions are those of the real-space box.
         IntVect fft_size = realspace_ba[mfi].length();
 
+        std::cout << "SpectralFieldData constructor defining plans on box " << tmpRealField[mfi].box() << " size " << fft_size << std::endl;
         forward_plan[mfi] = AnyFFT::CreatePlan(
             fft_size, tmpRealField[mfi].dataPtr(),
             reinterpret_cast<AnyFFT::Complex*>( tmpSpectralField[mfi].dataPtr()),
@@ -122,6 +123,11 @@ SpectralFieldData::ForwardTransform (const MultiFab& mf, const int field_index,
                 realspace_bx = mf[mfi].box(); // Keep guard cells
             }
             realspace_bx.enclosedCells(); // Discard last point in nodal direction
+            // added by petermc
+            std::cout << "SpectralFieldData::ForwardTransform"
+                      << " mf[mfi].box() = " << mf[mfi].box()
+                      << " realspace_bx = " << realspace_bx
+                      << std::endl;
             AMREX_ALWAYS_ASSERT( realspace_bx.contains(tmpRealField[mfi].box()) );
             Array4<const Real> mf_arr = mf[mfi].array();
             Array4<Real> tmp_arr = tmpRealField[mfi].array();
@@ -131,6 +137,10 @@ SpectralFieldData::ForwardTransform (const MultiFab& mf, const int field_index,
             });
         }
 
+#if WARPX_USE_SPIRAL
+        // result of calling forward transform in Spiral.
+        // Array4<Complex> spiralSpectralField(realspace_bx, ...);
+#endif
         // Perform Fourier transform from `tmpRealField` to `tmpSpectralField`
         AnyFFT::Execute(forward_plan[mfi]);
 
@@ -164,6 +174,9 @@ SpectralFieldData::ForwardTransform (const MultiFab& mf, const int field_index,
                 fields_arr(i,j,k,field_index) = spectral_field_value;
             });
         }
+#if WARPX_USE_SPIRAL
+        // FIXME: Take difference between fields_arr and Spiral-computed array.
+#endif
     }
 }
 
@@ -233,6 +246,11 @@ SpectralFieldData::BackwardTransform( MultiFab& mf,
             const Box realspace_bx = tmpRealField[mfi].box();
             const Real inv_N = 1./realspace_bx.numPts();
 
+            // added by petermc
+            std::cout << "SpectralFieldData::BackwardTransform"
+                      << " realspace_bx = " << realspace_bx
+                      << " mf[mfi].box() = " << mf[mfi].box()
+                      << std::endl;
             if (m_periodic_single_box) {
                 // Enforce periodicity on the nodes, by using modulo in indices
                 // This is because `tmp_arr` is cell-centered while `mf_arr` can be nodal
