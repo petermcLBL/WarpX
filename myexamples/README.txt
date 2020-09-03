@@ -10,6 +10,7 @@ Source/FieldSolver/SpectralSolver/SpectralAlgorithms
 if USE_SPIRAL=TRUE then you need the Spiral-generated:
 warpx-symbol_rho_80.c
 warpx-symbol_norho_80.c
+warpx-fullstep_rho_80.c
 
 To build, from WarpX directory:
 make DIM=3 USE_PSATD=TRUE COMP=gcc USE_MPI=TRUE USE_OMP=FALSE USE_GPU=FALSE USE_SPIRAL=TRUE
