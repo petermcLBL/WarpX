@@ -13,6 +13,19 @@
 
 using namespace amrex;
 
+#if WARPX_USE_SPIRAL
+//extern "C"
+//{
+//  void init_warpxforward_only_80();
+//  void warpxforward_only_80(double  *Yptr, double  *Xptr);
+//
+//  void init_warpxbackward_only_80();
+//  void warpxbackward_only_80(double  *Yptr, double  *Xptr);
+//}
+#include "warpx-forward_only_80.c"
+#include "warpx-backward_only_80.c"
+#endif
+
 /* \brief Initialize fields in spectral space, and FFT plans */
 SpectralFieldData::SpectralFieldData( const amrex::BoxArray& realspace_ba,
                                       const SpectralKSpace& k_space,
@@ -32,6 +45,10 @@ SpectralFieldData::SpectralFieldData( const amrex::BoxArray& realspace_ba,
     // These arrays will store the data just before/after the FFT
     tmpRealField = MultiFab(realspace_ba, dm, 1, 0);
     tmpSpectralField = SpectralField(spectralspace_ba, dm, 1, 0);
+#if WARPX_USE_SPIRAL
+    // Need this because the backward FFT overwrites input tmpSpectralField.
+    copySpectralField = SpectralField(spectralspace_ba, dm, 1, 0);
+#endif
 
     // By default, we assume the FFT is done from/to a nodal grid in real space
     // It the FFT is performed from/to a cell-centered grid in real space,
@@ -138,6 +155,10 @@ SpectralFieldData::ForwardTransform (const MultiFab& mf, const int field_index,
         }
 
 #if WARPX_USE_SPIRAL
+        std::cout << "is_nodal_x=" << is_nodal_x 
+                  << " is_nodal_y=" << is_nodal_y
+                  << " is_nodal_z=" << is_nodal_z
+                  << std::endl;
         // result of calling forward transform in Spiral.
         // Array4<Complex> spiralSpectralField(realspace_bx, ...);
 #endif
@@ -151,6 +172,88 @@ SpectralFieldData::ForwardTransform (const MultiFab& mf, const int field_index,
         {
             Array4<Complex> fields_arr = SpectralFieldData::fields[mfi].array();
             Array4<const Complex> tmp_arr = tmpSpectralField[mfi].array();
+#if WARPX_USE_SPIRAL
+            const BaseFab<Real>& inputRealFab = tmpRealField[mfi];
+            const Box& inputBox = inputRealFab.box();
+            std::cout << "inputBox = " << inputBox
+                      << std::endl;
+            BaseFab<Complex>& tmpSpectralFab = tmpSpectralField[mfi];
+            const Box& spectralBox = tmpSpectralFab.box();
+            std::cout << "spectralBox = " << spectralBox
+                      << std::endl;
+            BaseFab<Complex> spectralFab(spectralBox, 1);
+            Array4<Complex> spectralArray = spectralFab.array();
+            // Call forward 3D FFT on inputRealFab.
+            init_warpxforward_only_80();
+            warpxforward_only_80((double*) spectralFab.dataPtr(),
+                                 (double*) inputRealFab.dataPtr());
+            // Spiral-generated code returns an array of real-imaginary pairs.
+            // Now compare spectralArray with tmpSpectralFab.
+            BaseFab<Complex> diffFab(spectralBox, 1);
+            Array4<Complex> diffArray = diffFab.array();
+            // components: source, dest, number
+            diffFab.copy(tmpSpectralFab, 0, 0, 1);
+            diffFab.minus(spectralFab, 0, 0, 1);
+            /*
+            std::cout << "At (10, 11, 12), "
+                      << "AMReX gives " << tmp_arr(10, 11, 12)
+                      << " and Spiral " << spectralArray(10, 11, 12)
+                      << " ratio " << (tmp_arr(10, 11, 12)/spectralArray(10, 11, 12))
+                      << std::endl;
+            */
+            Real amrex_max = 0.;
+            Real spiral_max = 0.;
+            Real diff_max = 0.;
+            Real amrex2_sum = 0.;
+            Real spiral2_sum = 0.;
+            IntVect amrex_biggest = IntVect(0, 0, 0);
+            IntVect spiral_biggest = IntVect(0, 0, 0);
+            const Dim3 spectralLo = amrex::lbound(spectralBox);
+            const Dim3 spectralHi = amrex::ubound(spectralBox);
+            for (int k = spectralLo.z; k <= spectralHi.z; ++k)
+              for (int j = spectralLo.y; j <= spectralHi.y; ++j)
+                for (int i = spectralLo.x; i <= spectralHi.x; ++i)
+                  {
+                    Complex amrex_val = tmp_arr(i, j, k);
+                    Complex spiral_val = spectralArray(i, j, k);
+                    Real amrex_abs = abs(amrex_val);
+                    Real spiral_abs = abs(spiral_val);
+                    amrex2_sum += amrex_abs * amrex_abs;
+                    spiral2_sum += spiral_abs * spiral_abs;
+                    if (amrex_abs > amrex_max)
+                      {
+                        amrex_max = amrex_abs;
+                        amrex_biggest = IntVect(i, j, k);
+                      }
+                    if (spiral_abs > spiral_max)
+                      {
+                        spiral_max = spiral_abs;
+                        spiral_biggest = IntVect(i, j, k);
+                      }
+                    Real diff_abs = abs(diffArray(i, j, k));
+                    if (diff_abs > diff_max)
+                      {
+                        diff_max = diff_abs;
+                      }
+                  }
+            /*
+            std::cout << "Forward 3DFFT sum(|amrex|^2) = " << amrex2_sum
+                      << " sum(|spiral|^2) = " << spiral2_sum
+                      << " ratio " << (amrex2_sum/spiral2_sum)
+                      << std::endl;
+            */
+            std::cout << "Forward 3DFFT |diff| <= " << diff_max
+                      << " |solution| <= " << amrex_max
+                      << " relative " << (diff_max/amrex_max)
+                      << std::endl;
+            /*
+            std::cout << "Location of biggest"
+                      << " amrex " << amrex_biggest
+                      << " spiral " << spiral_biggest
+                      << " within " << spectralBox
+                      << std::endl;
+            */
+#endif
             const Complex* xshift_arr = xshift_FFTfromCell[mfi].dataPtr();
 #if (AMREX_SPACEDIM == 3)
             const Complex* yshift_arr = yshift_FFTfromCell[mfi].dataPtr();
@@ -174,9 +277,6 @@ SpectralFieldData::ForwardTransform (const MultiFab& mf, const int field_index,
                 fields_arr(i,j,k,field_index) = spectral_field_value;
             });
         }
-#if WARPX_USE_SPIRAL
-        // FIXME: Take difference between fields_arr and Spiral-computed array.
-#endif
     }
 }
 
@@ -229,9 +329,33 @@ SpectralFieldData::BackwardTransform( MultiFab& mf,
                 // Copy field into temporary array
                 tmp_arr(i,j,k) = spectral_field_value;
             });
-
+#if WARPX_USE_SPIRAL
+            BaseFab<Complex>& copySpectralFieldFab = copySpectralField[mfi];
+            copySpectralFieldFab.copy(tmpSpectralField[mfi]);
+            /*
+            const Dim3 inputLo = amrex::lbound(spectralspace_bx);
+            const Dim3 inputHi = amrex::ubound(spectralspace_bx);
+            FILE* fp_input = fopen("amrex_in.out", "w");
+            for (int k = inputLo.z; k <= inputHi.z; ++k)
+              for (int j = inputLo.y; j <= inputHi.y; ++j)
+                for (int i = inputLo.x; i <= inputHi.x; ++i)
+                  {
+                    // tmp_arr(i, j, k) = i * 1.; // FIXME
+                    fprintf(fp_input, " %3d%3d%3d%20.9e%20.9e\n", i, j, k,
+                            tmp_arr(i, j, k).real(),
+                            tmp_arr(i, j, k).imag());
+                  }
+            fclose(fp_input);
+            */
+#endif
         }
 
+#if WARPX_USE_SPIRAL
+        std::cout << "is_nodal_x=" << is_nodal_x 
+                  << " is_nodal_y=" << is_nodal_y
+                  << " is_nodal_z=" << is_nodal_z
+                  << std::endl;
+#endif
         // Perform Fourier transform from `tmpSpectralField` to `tmpRealField`
         AnyFFT::Execute(backward_plan[mfi]);
 
@@ -251,6 +375,114 @@ SpectralFieldData::BackwardTransform( MultiFab& mf,
                       << " realspace_bx = " << realspace_bx
                       << " mf[mfi].box() = " << mf[mfi].box()
                       << std::endl;
+#if WARPX_USE_SPIRAL
+            const BaseFab<Complex>& inputSpectralFab = copySpectralField[mfi];
+            const Box& spectralBox = inputSpectralFab.box();
+            std::cout << "spectralBox = " << spectralBox
+                      << std::endl;
+            const BaseFab<Real>& outputRealFab = tmpRealField[mfi];
+            const Box& outputBox = outputRealFab.box();
+            std::cout << "outputBox = " << outputBox
+                      << std::endl;
+            BaseFab<Real> realFab(outputBox, 1);
+            Array4<Real> realArray = realFab.array();
+            /*
+            const Dim3 inputLo = amrex::lbound(spectralBox);
+            const Dim3 inputHi = amrex::ubound(spectralBox);
+            Array4<const Complex> inputSpectralArray = inputSpectralFab.array();
+            FILE* fp_input = fopen("spiral_in.out", "w");
+            for (int k = inputLo.z; k <= inputHi.z; ++k)
+              for (int j = inputLo.y; j <= inputHi.y; ++j)
+                for (int i = inputLo.x; i <= inputHi.x; ++i)
+                  {
+                    // tmp_arr(i, j, k) = i * 1.; // FIXME
+                    fprintf(fp_input, " %3d%3d%3d%20.9e%20.9e\n", i, j, k,
+                            inputSpectralArray(i, j, k).real(),
+                            inputSpectralArray(i, j, k).imag());
+                  }
+            fclose(fp_input);
+            exit(0);
+            */
+            
+            // Call backward 3D FFT on inputSpectralFab.
+            init_warpxbackward_only_80();
+            warpxbackward_only_80((double*) realFab.dataPtr(),
+                                  (double*) inputSpectralFab.dataPtr());
+            // realFab.mult(inv_N, 0);
+            BaseFab<Real> diffFab(outputBox, 1);
+            Array4<Real> diffArray = diffFab.array();
+            // components: source, dest, number
+            diffFab.copy(outputRealFab, 0, 0, 1);
+            diffFab.minus(realFab, 0, 0, 1);
+            /*
+            std::cout << "At (10, 11, 12), "
+                      << "AMReX gives " << tmp_arr(10, 11, 12)
+                      << " and Spiral " << realArray(10, 11, 12)
+                      << " ratio " << (tmp_arr(10, 11, 12)/realArray(10, 11, 12))
+                      << std::endl;
+            */
+            Real amrex_max = 0.;
+            Real spiral_max = 0.;
+            Real diff_max = 0.;
+            Real amrex2_sum = 0.;
+            Real spiral2_sum = 0.;
+            IntVect amrex_biggest = IntVect(0, 0, 0);
+            IntVect spiral_biggest = IntVect(0, 0, 0);
+            const Dim3 outputLo = amrex::lbound(outputBox);
+            const Dim3 outputHi = amrex::ubound(outputBox);
+            // FILE* fp_amrex = fopen("amrex.out", "w");
+            // FILE* fp_spiral = fopen("spiral.out", "w");
+            for (int k = outputLo.z; k <= outputHi.z; ++k)
+              for (int j = outputLo.y; j <= outputHi.y; ++j)
+                for (int i = outputLo.x; i <= outputHi.x; ++i)
+                  {
+                    Real amrex_val = tmp_arr(i, j, k);
+                    Real spiral_val = realArray(i, j, k);
+                    // fprintf(fp_amrex, " %3d%3d%3d%20.9e\n", i, j, k,
+                    // amrex_val);
+                    // fprintf(fp_spiral, " %3d%3d%3d%20.9e\n", i, j, k,
+                    // spiral_val);
+                    Real amrex_abs = amrex::Math::abs(amrex_val);
+                    Real spiral_abs = amrex::Math::abs(spiral_val);
+                    amrex2_sum += amrex_abs * amrex_abs;
+                    spiral2_sum += spiral_abs * spiral_abs;
+                    if (amrex_abs > amrex_max)
+                      {
+                        amrex_max = amrex_abs;
+                        amrex_biggest = IntVect(i, j, k);
+                      }
+                    if (spiral_abs > spiral_max)
+                      {
+                        spiral_max = spiral_abs;
+                        spiral_biggest = IntVect(i, j, k);
+                      }
+                    Real diff_abs = amrex::Math::abs(diffArray(i, j, k));
+                    if (diff_abs > diff_max)
+                      {
+                        diff_max = diff_abs;
+                      }
+                  }
+            // fclose(fp_amrex);
+            // fclose(fp_spiral);
+            /*
+            std::cout << "Backward 3DFFT sum(|amrex|^2) = " << amrex2_sum
+                      << " sum(|spiral|^2) = " << spiral2_sum
+                      << " ratio " << (amrex2_sum/spiral2_sum)
+                      << std::endl;
+            */
+            std::cout << "Backward 3DFFT |diff| <= " << diff_max
+                      << " |solution| <= " << amrex_max
+                      << " relative " << (diff_max/amrex_max)
+                      << std::endl;
+            /*
+            std::cout << "Location of biggest"
+                      << " amrex " << amrex_biggest
+                      << " spiral " << spiral_biggest
+                      << " within " << outputBox
+                      << std::endl;
+            */
+            // exit(0);
+#endif
             if (m_periodic_single_box) {
                 // Enforce periodicity on the nodes, by using modulo in indices
                 // This is because `tmp_arr` is cell-centered while `mf_arr` can be nodal

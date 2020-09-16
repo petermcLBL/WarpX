@@ -73,6 +73,9 @@ class SpectralFieldData
         // tmpRealField and tmpSpectralField store fields
         // right before/after the Fourier transform
         SpectralField tmpSpectralField; // contains Complexs
+#if WARPX_USE_SPIRAL
+        SpectralField copySpectralField;
+#endif
         amrex::MultiFab tmpRealField; // contains Reals
         AnyFFT::FFTplans forward_plan, backward_plan;
         // Correcting "shift" factors when performing FFT from/to
@@ -94,6 +97,25 @@ class SpectralFieldData
 #endif
 
         bool m_periodic_single_box;
+
+#if WARPX_USE_SPIRAL
+  amrex::IntVect flip(const amrex::IntVect& input)
+  {
+    amrex::IntVect output;
+    for (int idir = 0; idir < AMREX_SPACEDIM; idir++)
+      {
+        output[idir] = input[AMREX_SPACEDIM-1 - idir];
+      }
+    return output;
+  }
+
+  amrex::Box transpose(const amrex::Box& input)
+  {
+    return amrex::Box(flip(input.smallEnd()),
+                      flip(input.bigEnd()),
+                      flip(input.type()));
+  }
+#endif
 };
 
 #endif // WARPX_SPECTRAL_FIELD_DATA_H_

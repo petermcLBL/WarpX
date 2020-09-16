@@ -30,6 +30,16 @@ namespace AnyFFT
         // Swap dimensions: AMReX FAB are Fortran-order but FFTW is C-order
         if (dir == direction::R2C){
             if (dim == 3) {
+#if WARPX_USE_SPIRAL
+              std::cout << "VendorCreatePlanR2C3D, which is "
+#ifdef AMREX_USE_FLOAT
+                        << "fftwf_plan_dft_r2c_3d"
+#else
+                        << "fftw_plan_dft_r2c_3d"
+#endif
+                        << " on size " << real_size
+                        << std::endl;
+#endif
                 fft_plan.m_plan = VendorCreatePlanR2C3D(
                     real_size[2], real_size[1], real_size[0], real_array, complex_array, FFTW_ESTIMATE);
             } else if (dim == 2) {
