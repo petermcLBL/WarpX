@@ -82,6 +82,9 @@ namespace {
 #if WARPX_USE_FULL_SPIRAL
         std::array< std::unique_ptr<amrex::MultiFab>, 3 > EfieldNew;
         std::array< std::unique_ptr<amrex::MultiFab>, 3 > BfieldNew;
+        std::array< std::unique_ptr<amrex::MultiFab>, 3 > diffE;
+        std::array< std::unique_ptr<amrex::MultiFab>, 3 > diffB;
+        
         for (int idir = 0; idir < 3; idir++)
           {
             EfieldNew[idir].reset( new MultiFab(Efield[idir]->boxArray(),
@@ -89,6 +92,14 @@ namespace {
                                                 Efield[idir]->nComp(),
                                                 Efield[idir]->nGrow()) );
             BfieldNew[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
+                                                Bfield[idir]->DistributionMap(),
+                                                Bfield[idir]->nComp(),
+                                                Bfield[idir]->nGrow()) );
+            diffE[idir].reset( new MultiFab(Efield[idir]->boxArray(),
+                                                Efield[idir]->DistributionMap(),
+                                                Efield[idir]->nComp(),
+                                                Efield[idir]->nGrow()) );
+            diffB[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
                                                 Bfield[idir]->DistributionMap(),
                                                 Bfield[idir]->nComp(),
                                                 Bfield[idir]->nGrow()) );
@@ -181,8 +192,13 @@ namespace {
         }
 #endif
 
+#if WARPX_USE_FULL_SPIRAL
+        EfieldNew[0]->Subtract(*diffE[0], *Efield[0],0,0,1,Efield[0]->nGrow());
+        double normEx = diffE[0]->norminf(0,0);
+        std::cout<<"Ex norm old vs spiral = "<<normEx<<"\n";
         // FIXME: Now find differences between Efield and EfieldNew,
         // Bfield and BfieldNew.
+#endif
     }
 }
 
