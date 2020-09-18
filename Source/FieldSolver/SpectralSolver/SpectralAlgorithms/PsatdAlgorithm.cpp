@@ -19,6 +19,7 @@ using namespace amrex;
 #include "warpx-symbol_rho_80.c"
 #include "warpx-symbol_norho_80.c"
 #include "warpx-fullstep_rho_80.c"
+#include "psatd.fftx.codegen.hpp"
 #endif
 
 /**
@@ -45,6 +46,9 @@ PsatdAlgorithm::PsatdAlgorithm(const SpectralKSpace& spectral_kspace,
 
     // Initialize coefficients for update equations
     InitializeSpectralCoefficients(spectral_kspace, dm, dt);
+#if WARPX_USE_FULL_SPIRAL
+    psatd::init();
+#endif
 }
 
 /**
@@ -239,6 +243,21 @@ PsatdAlgorithm::pushSpectralFields(SpectralFieldData& f) const{
 };
 
 #if WARPX_USE_FULL_SPIRAL
+
+fftx::array_t<3, double> alias(amrex::BaseFab<double>& fab)
+{
+  const amrex::Box& b = fab.box();
+  amrex::IntVect lo=b.smallEnd(), hi=b.bigEnd();
+  fftx::box_t<3> b2({{lo[0],lo[1],lo[2]}},{{hi[0],hi[1],hi[2]}});
+  return fftx::array_t<3,double>(fftx::global_ptr<double>(fab.dataPtr(), 0,0),b2);
+}
+fftx::array_t<3, double> alias(amrex::PODVector<double>& v)
+{
+
+  fftx::box_t<3> b2({{1,1,1}},{{static_cast<int>(v.size()),1,1}});
+  return fftx::array_t<3,double>(fftx::global_ptr<double>(v.dataPtr(), 0,0),b2);
+}
+
 /**
  * \brief Advance E and B fields in spectral space (stored in `f`) over one time step
  */
@@ -300,7 +319,12 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
 
     std::cout << "PsatdAlgorithm::stepSpiral allocating inputDataPtr" << std::endl;
     double** inputDataPtr = new double*[11];
-    inputDataPtr[0] = (double*) ExFab.dataPtr();
+    
+    std::array<fftx::array_t<3,double>,11> inputArray = {alias(ExFab),alias(EyFab),alias(EzFab),
+                                                         alias(BxFab),alias(ByFab),alias(BzFab),
+                                                         alias(JxFab),alias(JyFab),alias(JzFab),
+                                                         alias(rhoOldFab),alias(rhoNewFab)};
+    inputDataPtr[0] = (double*) ExFab.dataPtr(); 
     inputDataPtr[1] = (double*) EyFab.dataPtr();
     inputDataPtr[2] = (double*) EzFab.dataPtr();
     inputDataPtr[3] = (double*) BxFab.dataPtr();
@@ -314,6 +338,9 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
 
     std::cout << "PsatdAlgorithm::stepSpiral allocating outputDataPtr" << std::endl;
     double** outputDataPtr = new double*[6];
+    std::array<fftx::array_t<3,double>,6> outputArray = {alias(ExNewFab),alias(EyNewFab),alias(EzNewFab),
+                                                         alias(BxNewFab),alias(ByNewFab),alias(BzNewFab)};
+                                                        
     outputDataPtr[0] = (double*) ExNewFab.dataPtr();
     outputDataPtr[1] = (double*) EyNewFab.dataPtr();
     outputDataPtr[2] = (double*) EzNewFab.dataPtr();
@@ -323,6 +350,14 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
         
     std::cout << "PsatdAlgorithm::stepSpiral allocating sym_for_psatd" << std::endl;
     double** sym_for_psatd = new double*[8];
+    std::array<fftx::array_t<3,double>,8> symArray = {alias(modified_kx_vec[mfi]),
+                                                      alias(modified_ky_vec[mfi]),
+                                                      alias(modified_kz_vec[mfi]),
+                                                      alias(C_coef[mfi]),
+                                                      alias(S_ck_coef[mfi]),
+                                                      alias(X1_coef[mfi]),
+                                                      alias(X2_coef[mfi]),
+                                                      alias(X3_coef[mfi])};
     sym_for_psatd[0] = (double*) modified_kx_arr;
     sym_for_psatd[1] = (double*) modified_ky_arr;
     sym_for_psatd[2] = (double*) modified_kz_arr;
@@ -332,13 +367,17 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
     sym_for_psatd[6] = (double*) X2_arr.dataPtr();
     sym_for_psatd[7] = (double*) X3_arr.dataPtr();
 
+    
     // Call the Spiral-generated C function here.
     if (update_with_rho) {
+      /*
       std::cout << "Calling init_warpxfull_rho_80" << std::endl;
       init_warpxfull_rho_80();
       std::cout << "Calling warpxfull_rho_80" << std::endl;
       warpxfull_rho_80(outputDataPtr, inputDataPtr, sym_for_psatd);
       std::cout << "Called warpxfull_rho_80" << std::endl;
+      */
+      psatd::transform(inputArray, outputArray, symArray);
     } else {
     }
 
