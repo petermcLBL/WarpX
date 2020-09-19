@@ -167,6 +167,15 @@ SpectralFieldData::compareSpiralForwardStep()
       {
         std::cout << "compareSpiralForwardStep on component "
                   << i_comp << std::endl;
+
+        char amrexstr[30];
+        sprintf(amrexstr, "fwdamrex_%d.out", i_comp);
+        char spiralstr[30];
+        sprintf(spiralstr, "fwdspiral_%d.out", i_comp);
+
+        FILE* fp_amrex = fopen(amrexstr, "w");
+        FILE* fp_spiral = fopen(spiralstr, "w");
+
         BaseFab<Complex> diffFab(spectralBox, 1);
         // first comp, number
         BaseFab<Complex> spiralFab(fieldsForwardFab, amrex::make_alias, i_comp, 1);
@@ -184,13 +193,6 @@ SpectralFieldData::compareSpiralForwardStep()
         Real spiral2_sum = 0.;
         IntVect amrex_biggest = IntVect(0, 0, 0);
         IntVect spiral_biggest = IntVect(0, 0, 0);
-        FILE *fp_amrex, *fp_spiral;
-        int write_dim = 1;
-        if (i_comp == write_dim)
-          {
-            fp_amrex = fopen("amrex.out", "w");
-            fp_spiral = fopen("spiral.out", "w");
-          }
         const Dim3 spectralLo = amrex::lbound(spectralBox);
         const Dim3 spectralHi = amrex::ubound(spectralBox);
         for (int k = spectralLo.z; k <= spectralHi.z; ++k)
@@ -199,13 +201,10 @@ SpectralFieldData::compareSpiralForwardStep()
               {
                 Complex amrex_val = amrexArray(i, j, k);
                 Complex spiral_val = spiralArray(i, j, k);
-                if (i_comp == write_dim)
-                  {
-                    fprintf(fp_amrex, " %3d%3d%3d%20.9e%20.9e\n", i, j, k,
-                            amrex_val.real(), amrex_val.imag());
-                    fprintf(fp_spiral, " %3d%3d%3d%20.9e%20.9e\n", i, j, k,
-                            spiral_val.real(), spiral_val.imag());
-                  }
+                fprintf(fp_amrex, " %3d%3d%3d%20.9e%20.9e\n", i, j, k,
+                        amrex_val.real(), amrex_val.imag());
+                fprintf(fp_spiral, " %3d%3d%3d%20.9e%20.9e\n", i, j, k,
+                        spiral_val.real(), spiral_val.imag());
                 Real amrex_abs = abs(amrex_val);
                 Real spiral_abs = abs(spiral_val);
                 amrex2_sum += amrex_abs * amrex_abs;
@@ -226,11 +225,8 @@ SpectralFieldData::compareSpiralForwardStep()
                     diff_max = diff_abs;
                   }
               }
-        if (i_comp == write_dim)
-          {
-            fclose(fp_amrex);
-            fclose(fp_spiral);
-          }
+        fclose(fp_amrex);
+        fclose(fp_spiral);
         std::cout << "Forward 3DFFT sum(|amrex|^2) = " << amrex2_sum
                   << " sum(|spiral|^2) = " << spiral2_sum
                   << " ratio " << (amrex2_sum/spiral2_sum)
@@ -244,10 +240,6 @@ SpectralFieldData::compareSpiralForwardStep()
                   << " spiral " << spiral_biggest
                   << " within " << spectralBox
                   << std::endl;
-        if (i_comp == 7) // this component has norm2 ratio 1.
-          {
-            // exit(0); // FIXME
-          }
       }
   }
 }
