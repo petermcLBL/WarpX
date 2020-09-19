@@ -56,6 +56,17 @@ class SpectralFieldData
         SpectralFieldData& operator=(SpectralFieldData&& field_data) = default;
         ~SpectralFieldData();
 
+#if WARPX_USE_SPIRAL
+  // Puts result of TResample + MDPRDFT into fieldsForward.
+  void allForwardTransform (
+                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield,
+                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& current,
+                            std::unique_ptr<amrex::MultiFab>& rho );
+
+  void compareSpiralForwardStep();
+#endif
+
         void ForwardTransform (const amrex::MultiFab& mf, const int field_index,
                                const int i_comp, const amrex::IntVect& stag);
         AMREX_FORCE_INLINE
@@ -74,6 +85,7 @@ class SpectralFieldData
         // right before/after the Fourier transform
         SpectralField tmpSpectralField; // contains Complexs
 #if WARPX_USE_SPIRAL
+        SpectralField fieldsForward;
         SpectralField copySpectralField;
 #endif
         amrex::MultiFab tmpRealField; // contains Reals

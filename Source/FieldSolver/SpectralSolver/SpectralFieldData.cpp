@@ -24,6 +24,7 @@ using namespace amrex;
 //}
 #include "warpx-forward_only_80.c"
 #include "warpx-backward_only_80.c"
+#include "warpx-forward_step_80.c"
 #endif
 
 /* \brief Initialize fields in spectral space, and FFT plans */
@@ -40,12 +41,14 @@ SpectralFieldData::SpectralFieldData( const amrex::BoxArray& realspace_ba,
     // Allocate the arrays that contain the fields in spectral space
     // (one component per field)
     fields = SpectralField(spectralspace_ba, dm, n_field_required, 0);
-
+    
     // Allocate temporary arrays - in real space and spectral space
     // These arrays will store the data just before/after the FFT
     tmpRealField = MultiFab(realspace_ba, dm, 1, 0);
     tmpSpectralField = SpectralField(spectralspace_ba, dm, 1, 0);
 #if WARPX_USE_SPIRAL
+    // For allForwardTransform: 11 components
+    fieldsForward = SpectralField(spectralspace_ba, dm, 11, 0);
     // Need this because the backward FFT overwrites input tmpSpectralField.
     copySpectralField = SpectralField(spectralspace_ba, dm, 1, 0);
 #endif
@@ -107,6 +110,149 @@ SpectralFieldData::~SpectralFieldData()
         }
     }
 }
+
+#if WARPX_USE_SPIRAL
+void
+SpectralFieldData::allForwardTransform (
+    std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+    std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield,
+    std::array<std::unique_ptr< amrex::MultiFab >, 3>& current,
+    std::unique_ptr<amrex::MultiFab>& rho )
+{
+  // Loop over boxes
+  for ( MFIter mfi(*rho); mfi.isValid(); ++mfi ){
+    double** inPtr = new double*[11];
+    inPtr[0] = (*Efield[0])[mfi].dataPtr();
+    inPtr[1] = (*Efield[1])[mfi].dataPtr();
+    inPtr[2] = (*Efield[2])[mfi].dataPtr();
+    inPtr[3] = (*Bfield[0])[mfi].dataPtr();
+    inPtr[4] = (*Bfield[1])[mfi].dataPtr();
+    inPtr[5] = (*Bfield[2])[mfi].dataPtr();
+    inPtr[6] = (*current[0])[mfi].dataPtr();
+    inPtr[7] = (*current[1])[mfi].dataPtr();
+    inPtr[8] = (*current[2])[mfi].dataPtr();
+    amrex::FArrayBox rhoOld((*rho)[mfi], amrex::make_alias, 0, 1); // start, num
+    amrex::FArrayBox rhoNew((*rho)[mfi], amrex::make_alias, 1, 1); // start, num
+    inPtr[9] = rhoOld.dataPtr();
+    inPtr[10] = rhoNew.dataPtr();
+
+    // FIXME
+    // SpectralFieldData has
+    // void ForwardTransform (const amrex::MultiFab& mf, const int field_index,
+    //                        const int i_comp, const amrex::IntVect& stag);
+    // does
+    // ForwardTransform(mf, field_index, i_comp, mf.ixType().toIntVect());
+    // But I do not need stag.
+    // field_index is used only in the final copy into field_arr.
+
+    double* outPtr = (double*) (fieldsForward[mfi].dataPtr());
+
+    init_warpxforward_step_80();
+    warpxforward_step_80(outPtr, inPtr);
+    
+    delete[] inPtr;
+  }
+}
+
+void
+SpectralFieldData::compareSpiralForwardStep()
+{
+  // Compare fields vs. fieldsForward.
+  for ( MFIter mfi(fieldsForward); mfi.isValid(); ++mfi ){
+    amrex::BaseFab<Complex>& fieldsForwardFab = fieldsForward[mfi];
+    amrex::BaseFab<Complex>& fieldsFab = fields[mfi];
+    const Box& spectralBox = fieldsFab.box();
+    int ncomps = fieldsForwardFab.nComp();
+    for (int i_comp = 0; i_comp < ncomps; i_comp++)
+      {
+        std::cout << "compareSpiralForwardStep on component "
+                  << i_comp << std::endl;
+        BaseFab<Complex> diffFab(spectralBox, 1);
+        // first comp, number
+        BaseFab<Complex> spiralFab(fieldsForwardFab, amrex::make_alias, i_comp, 1);
+        BaseFab<Complex> amrexFab(fieldsFab, amrex::make_alias, i_comp, 1);
+        Array4<Complex> spiralArray = spiralFab.array();
+        Array4<Complex> amrexArray = amrexFab.array();
+        Array4<Complex> diffArray = diffFab.array();
+        // components: source, dest, number
+        diffFab.copy(fieldsFab, i_comp, 0, 1);
+        diffFab.minus(fieldsForwardFab, i_comp, 0, 1);
+        Real amrex_max = 0.;
+        Real spiral_max = 0.;
+        Real diff_max = 0.;
+        Real amrex2_sum = 0.;
+        Real spiral2_sum = 0.;
+        IntVect amrex_biggest = IntVect(0, 0, 0);
+        IntVect spiral_biggest = IntVect(0, 0, 0);
+        FILE *fp_amrex, *fp_spiral;
+        int write_dim = 1;
+        if (i_comp == write_dim)
+          {
+            fp_amrex = fopen("amrex.out", "w");
+            fp_spiral = fopen("spiral.out", "w");
+          }
+        const Dim3 spectralLo = amrex::lbound(spectralBox);
+        const Dim3 spectralHi = amrex::ubound(spectralBox);
+        for (int k = spectralLo.z; k <= spectralHi.z; ++k)
+          for (int j = spectralLo.y; j <= spectralHi.y; ++j)
+            for (int i = spectralLo.x; i <= spectralHi.x; ++i)
+              {
+                Complex amrex_val = amrexArray(i, j, k);
+                Complex spiral_val = spiralArray(i, j, k);
+                if (i_comp == write_dim)
+                  {
+                    fprintf(fp_amrex, " %3d%3d%3d%20.9e%20.9e\n", i, j, k,
+                            amrex_val.real(), amrex_val.imag());
+                    fprintf(fp_spiral, " %3d%3d%3d%20.9e%20.9e\n", i, j, k,
+                            spiral_val.real(), spiral_val.imag());
+                  }
+                Real amrex_abs = abs(amrex_val);
+                Real spiral_abs = abs(spiral_val);
+                amrex2_sum += amrex_abs * amrex_abs;
+                spiral2_sum += spiral_abs * spiral_abs;
+                if (amrex_abs > amrex_max)
+                  {
+                    amrex_max = amrex_abs;
+                    amrex_biggest = IntVect(i, j, k);
+                  }
+                if (spiral_abs > spiral_max)
+                  {
+                    spiral_max = spiral_abs;
+                    spiral_biggest = IntVect(i, j, k);
+                  }
+                Real diff_abs = abs(diffArray(i, j, k));
+                if (diff_abs > diff_max)
+                  {
+                    diff_max = diff_abs;
+                  }
+              }
+        if (i_comp == write_dim)
+          {
+            fclose(fp_amrex);
+            fclose(fp_spiral);
+          }
+        std::cout << "Forward 3DFFT sum(|amrex|^2) = " << amrex2_sum
+                  << " sum(|spiral|^2) = " << spiral2_sum
+                  << " ratio " << (amrex2_sum/spiral2_sum)
+                  << std::endl;
+        std::cout << "Forward 3DFFT |diff| <= " << diff_max
+                  << " |solution| <= " << amrex_max
+                  << " relative " << (diff_max/amrex_max)
+                  << std::endl;
+        std::cout << "Location of biggest"
+                  << " amrex " << amrex_biggest
+                  << " spiral " << spiral_biggest
+                  << " within " << spectralBox
+                  << std::endl;
+        if (i_comp == 7) // this component has norm2 ratio 1.
+          {
+            // exit(0); // FIXME
+          }
+      }
+  }
+}
+
+#endif
 
 /* \brief Transform the component `i_comp` of MultiFab `mf`
  *  to spectral space, and store the corresponding result internally
