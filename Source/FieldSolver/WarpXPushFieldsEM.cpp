@@ -45,16 +45,38 @@ namespace {
 
         // BEGIN DEBUG
         for (MFIter mfi(*rho); mfi.isValid(); ++mfi){
-          Array4<Real> Ex4 = (*Efield[0])[mfi].array();
-          Array4<Real> Ey4 = (*Efield[1])[mfi].array();
-          Array4<Real> Ez4 = (*Efield[2])[mfi].array();
-          Array4<Real> Bx4 = (*Bfield[0])[mfi].array();
-          Array4<Real> By4 = (*Bfield[1])[mfi].array();
-          Array4<Real> Bz4 = (*Bfield[2])[mfi].array();
-          Array4<Real> Jx4 = (*current[0])[mfi].array();
-          Array4<Real> Jy4 = (*current[1])[mfi].array();
-          Array4<Real> Jz4 = (*current[2])[mfi].array();
-          Array4<Real> rho4 = (*rho)[mfi].array();
+          BaseFab<Real>& ExFab = (*Efield[0])[mfi];
+          BaseFab<Real>& EyFab = (*Efield[1])[mfi];
+          BaseFab<Real>& EzFab = (*Efield[2])[mfi];
+          BaseFab<Real>& BxFab = (*Bfield[0])[mfi];
+          BaseFab<Real>& ByFab = (*Bfield[1])[mfi];
+          BaseFab<Real>& BzFab = (*Bfield[2])[mfi];
+          BaseFab<Real>& JxFab = (*current[0])[mfi];
+          BaseFab<Real>& JyFab = (*current[1])[mfi];
+          BaseFab<Real>& JzFab = (*current[2])[mfi];
+          BaseFab<Real>& rhoFab = (*rho)[mfi];
+          
+          std::cout << "Efield[0] on " << ExFab.box() << std::endl;
+          std::cout << "Efield[1] on " << EyFab.box() << std::endl;
+          std::cout << "Efield[2] on " << EzFab.box() << std::endl;
+          std::cout << "Bfield[0] on " << BxFab.box() << std::endl;
+          std::cout << "Bfield[1] on " << ByFab.box() << std::endl;
+          std::cout << "Bfield[2] on " << BzFab.box() << std::endl;
+          std::cout << "current[0] on " << JxFab.box() << std::endl;
+          std::cout << "current[1] on " << JyFab.box() << std::endl;
+          std::cout << "current[2] on " << JzFab.box() << std::endl;
+          std::cout << "rho on " << rhoFab.box() << std::endl;
+          
+          Array4<Real> Ex4 = ExFab.array();
+          Array4<Real> Ey4 = EyFab.array();
+          Array4<Real> Ez4 = EzFab.array();
+          Array4<Real> Bx4 = BxFab.array();
+          Array4<Real> By4 = ByFab.array();
+          Array4<Real> Bz4 = BzFab.array();
+          Array4<Real> Jx4 = JxFab.array();
+          Array4<Real> Jy4 = JyFab.array();
+          Array4<Real> Jz4 = JzFab.array();
+          Array4<Real> rho4 = rhoFab.array();
 
           std::cout << "At (10, 11, 12): " << std::endl;
           std::cout << "E = "
