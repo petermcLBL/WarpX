@@ -195,7 +195,7 @@ namespace {
 #endif
 
 #if WARPX_USE_FULL_SPIRAL
-        auto G = WarpX::GetInstance().Geom(0);
+        //auto G = WarpX::GetInstance().Geom(0);
         //Geometry G = Geometry(Box({0,0,0},{63,64,64}),RealBox({-1,-1,-1},{1,1,1}),
         //                      CoordSys::cartesian, Array<int,3>({0,0,0}));
         EfieldNew[0]->Subtract(*diffE[0], *Efield[0],0,0,1,Efield[0]->nGrow());
