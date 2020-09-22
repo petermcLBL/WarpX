@@ -100,11 +100,11 @@ namespace {
             diffE[idir].reset( new MultiFab(Efield[idir]->boxArray(),
                                                 Efield[idir]->DistributionMap(),
                                                 Efield[idir]->nComp(),
-                                                Efield[idir]->nGrow()) );
+                                            0 ));
             diffB[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
                                                 Bfield[idir]->DistributionMap(),
                                                 Bfield[idir]->nComp(),
-                                                Bfield[idir]->nGrow()) );
+                                            0 ));
           }
         solver.stepSpiral(EfieldNew, BfieldNew,
                           Efield, Bfield, Efield_avg, Bfield_avg, current, rho);
@@ -209,7 +209,7 @@ namespace {
         //auto G = WarpX::GetInstance().Geom(0);
         //Geometry G = Geometry(Box({0,0,0},{63,64,64}),RealBox({-1,-1,-1},{1,1,1}),
         //                      CoordSys::cartesian, Array<int,3>({0,0,0}));
-        EfieldNew[0]->Subtract(*diffE[0], *Efield[0],0,0,1,Efield[0]->nGrow());
+        EfieldNew[0]->Subtract(*diffE[0], *Efield[0],0,0,1,0);
         double normEx = diffE[0]->norminf(0,0);
         std::cout<<"Ex norm old vs spiral = "<<normEx<<"\n";
  
@@ -217,11 +217,11 @@ namespace {
         // WriteSingleLevelPlotfile(amrex::Concatenate("pltEx",istep),
         //                          *diffE[0], {{"Ex"}}, G, istep, istep);
         
-        EfieldNew[1]->Subtract(*diffE[1], *Efield[1],0,0,1,Efield[1]->nGrow());
+        EfieldNew[1]->Subtract(*diffE[1], *Efield[1],0,0,1,0);
         double normEy = diffE[1]->norminf(0,0);
         std::cout<<"Ey norm old vs spiral = "<<normEy<<"\n";
 
-        EfieldNew[2]->Subtract(*diffE[2], *Efield[2],0,0,1,Efield[2]->nGrow());
+        EfieldNew[2]->Subtract(*diffE[2], *Efield[2],0,0,1,0);
         double normEz = diffE[2]->norminf(0,0);
         std::cout<<"Ez norm old vs spiral = "<<normEz<<"\n";
 
