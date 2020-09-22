@@ -14,3 +14,34 @@ ifeq ($(USE_FULL_SPIRAL),TRUE)
 endif
 
 VPATH_LOCATIONS   += $(WARPX_HOME)/Source/FieldSolver/SpectralSolver/SpectralAlgorithms
+
+FFTX_DIR=~/fftx
+SPIRALDIR=~/spiral-software
+SPIRAL=$(SPIRALDIR)/spiral
+FFTX_BACKEND_HEADER=$(FFTX_DIR)/backend/header_generator
+FFTX_BACKEND_PREAMBLE=$(FFTX_DIR)/backend/spiral_cpu_serial/preamble.g
+FFTX_BACKEND_CODEGEN=$(FFTX_DIR)/backend/spiral_cpu_serial/codegen.g
+CXXFLAGS+= -I$(FFTX_DIR)  -I$(SPIRALDIR)/profiler/targets
+
+%.o:%.cpp psatd.fftx.codegen.hpp
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) -c -o $@ $<
+
+%.fftx.codegen.o: %.fftx.source.cpp
+	$(CXX) -c $(CXXFLAGS) $(OPTFLAGS) -o $@ $*.fftx.source.cpp
+
+%.fftx.source.cpp: %.fftx.generator.g
+	$(SPIRAL) < $< >& $*.spiral_output
+
+%.fftx.generator.g: %.fftx.plan.g $(FFTX_BACKEND_PREAMBLE) $(FFTX_BACKEND_CODEGEN) 
+	echo prefix:=\"$*\"\;  >| $@
+	cat $(FFTX_BACKEND_PREAMBLE) $< $(FFTX_BACKEND_CODEGEN) >> $@
+
+%.fftx.codegen.hpp %.fftx.plan.g : %.fftx.driver.exe
+	./$< >| $*.fftx.plan.g
+
+%.fftx.driver.exe : %.fftx.driver.cpp $(FFTX_DIR)/fftx3.hpp defineArrays.hpp
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(LDFLAGS) -o $@ $*.fftx.driver.cpp
+
+%.fftx.driver.cpp: %.fftx.cpp 
+	cat $*.fftx.cpp >| $@
+	echo "int main() { fftx::ID=1; fftx::tracing=true; trace(\""$*"\"); return 0;}" >> $@
