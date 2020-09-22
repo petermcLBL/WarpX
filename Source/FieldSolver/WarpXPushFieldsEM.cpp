@@ -109,6 +109,10 @@ namespace {
         solver.stepSpiral(EfieldNew, BfieldNew,
                           Efield, Bfield, Efield_avg, Bfield_avg, current, rho);
 #endif
+#if WARPX_USE_SPIRAL
+        // allForwardTransform should not change the inputs.
+        solver.allForwardTransform(Efield, Bfield, current, rho);
+#endif
         // Perform forward Fourier transform
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(*Efield[0], Idx::Ex,
@@ -154,6 +158,13 @@ namespace {
             solver.ApplyFilter(Idx::Jx, Idx::Jy, Idx::Jz);
         }
 #endif
+
+#if WARPX_USE_SPIRAL
+        // Compare the WarpX results with Spiral results:
+        // fields vs. fieldsForward.
+        solver.compareSpiralForwardStep();
+#endif
+        
         // Advance fields in spectral space
         std::cout << "PushPSATDSinglePatch calling solver.pushSpectralFields()" << std::endl;
         solver.pushSpectralFields();

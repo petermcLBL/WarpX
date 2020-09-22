@@ -70,6 +70,16 @@ class SpectralSolver
                   std::array<std::unique_ptr<amrex::MultiFab>,3>& current,
                   std::unique_ptr<amrex::MultiFab>& rho );
 #endif
+
+#if WARPX_USE_SPIRAL
+  void allForwardTransform(
+                           std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+                           std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield,
+                           std::array<std::unique_ptr< amrex::MultiFab >, 3>& current,
+                           std::unique_ptr<amrex::MultiFab>& rho );
+
+  void compareSpiralForwardStep();
+#endif
   
         /**
           * \brief Public interface to call the member function ComputeSpectralDivE
