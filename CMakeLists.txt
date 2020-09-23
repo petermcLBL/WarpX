@@ -36,8 +36,12 @@ set_default_install_dirs()
 option(WarpX_ASCENT        "Ascent in situ diagnostics"                 OFF)
 option(WarpX_MPI           "Multi-node support (message-passing)"       ON)
 option(WarpX_OPENPMD       "openPMD I/O (HDF5, ADIOS)"                  OFF)
-option(WarpX_PSATD         "spectral solver support"                    OFF)
+option(WarpX_PSATD         "spectral solver support"                    ON)
 option(WarpX_QED           "PICSAR QED (requires Boost and PICSAR)"     OFF)
+
+option ( WarpX_USE_SPIRAL  "Compare with SPIRAL generated FFTX code"             ON )
+option ( WarpX_USE_FULL_SPIRAL "Do full step with SPIRAL generated FFTX code"    OFF )
+
 # TODO: python, sensei, legacy hdf5?
 
 set(WarpX_DIMS_VALUES 2 3 RZ)
@@ -225,6 +229,15 @@ endif()
 if(WarpX_PSATD)
     target_compile_definitions(WarpX PRIVATE WARPX_USE_PSATD)
 endif()
+
+if ( WarpX_USE_SPIRAL )
+    target_compile_definitions ( WarpX PRIVATE WARPX_USE_SPIRAL )
+endif ()
+
+if ( WarpX_USE_FULL_SPIRAL )
+    target_compile_definitions ( WarpX PRIVATE WARPX_USE_FULL_SPIRAL )
+endif ()
+    
 
 target_compile_definitions(WarpX PRIVATE
     WARPX_PARSER_DEPTH=${WarpX_PARSER_DEPTH})
