@@ -237,7 +237,7 @@ endif ()
 if ( WarpX_USE_FULL_SPIRAL )
     target_compile_definitions ( WarpX PRIVATE WARPX_USE_FULL_SPIRAL )
 endif ()
-    
+
 
 target_compile_definitions(WarpX PRIVATE
     WARPX_PARSER_DEPTH=${WarpX_PARSER_DEPTH})
