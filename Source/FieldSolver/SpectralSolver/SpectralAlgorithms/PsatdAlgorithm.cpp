@@ -18,7 +18,8 @@ using namespace amrex;
 #if WARPX_USE_SPIRAL
 #include "warpx-symbol_rho_80.c"
 #include "warpx-symbol_norho_80.c"
-#include "warpx-fullstep_rho_80.c"
+#include "warpx-fullstep-rho_80.c"
+#include "fftx3.hpp"
 #include "psatd.fftx.codegen.hpp"
 #endif
 

@@ -1,0 +1,54 @@
+Building WarpX with SPIRAL generated code (using cmake)
+
+As we don't have formal releases and locations for some things yet (fftx, spiral-package-fftx), let's just
+add the files and extras we need in a sub-folder to SpectralAlgorithms: call it
+psatd.fftx.  In there we can place:
+
+defineArrays.hpp
+fftx3.hpp
+psatd.fftx.cpp
+
+We can also place there (for now) the spiral (*.g) files:
+warpx-fullstep-rho_80.g
+warpx-symbol_norho_80.g
+warpx-symbol_rho_80.g
+
+Also add the codegen/preamble (from fftx/src/backend/spiral_cpu_serial) files:
+codegen.g
+preamble.g
+
+The easiest and fastest way to manage the build is to de-couple our code
+creation from WarpX for now -- longer term some discussion and probably some
+decisions about where needed files (i.e., those listed above).  We can imagine
+building WarpX in 2 steps:
+
+  1. cd to psatd.fftx and run cmake / make install; that will put the necessary
+     files for compilation into SpectralAlgorithms
+     NOTE: files installed in this step are:
+     	   psatd.fftx.source.cpp
+	   psatd.fftx.codegen.hpp
+	   fftx3.hpp
+	   warpx-fullstep-rho_80.c
+	   warpx-symbol_norho_80.c
+	   warpx-symbol_rho_80.c
+	   
+  2. From the main Warpx folder run cmake / make install to build the whole enchilada
+
+Differences / Changes I made to source files:
+
+  1.  It appears that psatd.fftx.codegen.hpp (version checked in repo) includes
+      "fftx3.hpp".  The generation for this file (~.driver.cpp) currently
+      doesn't do this; so I've modified PsatdAlgorithm.cpp to include fftx3.hpp
+      ahead of psatd.fftx.codegen.hpp
+        
+  2.  There's (what I consider) a typo in warpx-fullstep-rho_80.g; it creates
+      the file warpx-fullstep_rho_80.c which is a different file stem name; I
+      changed this so it generates warpx-fullstep-rho_80.c now instead (and
+      modified PsatdAlgorithm.cpp accordingly).  This change also means the
+      cmake file doesn't have extra contortions to get the .c from the .g file.
+
+NOTE:  The cmake file in psatd.fftx relies on either (a) setting an environment
+variable SPIRAL_HOME to point to the location where you have SPIRAL installed
+(e.g., ~/spiral-software) or (b) define SPIRAL_HOME on the cmake command line
+(e.g., cmake -DSPIRAL_HOME:STRING=/home/patrick/spiral-software ..)
+  
