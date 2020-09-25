@@ -1,4 +1,9 @@
 ##
+## Copyright (c) 2018-2020, Carnegie Mellon University
+## All rights reserved.
+##
+## See LICENSE file for full information
+##
 
 ## specify this only here, lower levels use CMAKE_MINIMUM_REQUIRED_VERSION that this sets
 cmake_minimum_required (VERSION 3.14)
@@ -10,6 +15,17 @@ project (SPIRAL_WARPX_FILES
                 DESCRIPTION "Create SPIRAL generated files for WarpX"
                 LANGUAGES C CXX)
 
+##  Prevent building directly into the source tree
+string (COMPARE EQUAL "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" DISALLOW_COMPILE_INPLACE)
+if (DISALLOW_COMPILE_INPLACE)
+    message (FATAL_ERROR, "Building ${PROJECT_NAME} with CMake requires an out-of-source tree.  To proceed:
+                 rm -rf CMakeCache.txt CMakeFiles/   # delete files in ${CMAKE_SOURCE_DIR}
+                 mkdir <build>
+                 cd <build>
+                 cmake ..
+                 make | make install")
+endif()
+
 ##  Get SPIRAL home...
 
 if ( DEFINED ENV{SPIRAL_HOME} )
@@ -17,7 +33,7 @@ if ( DEFINED ENV{SPIRAL_HOME} )
     set ( SPIRAL_SOURCE_DIR $ENV{SPIRAL_HOME} )
 else ()
     if ( "x${SPIRAL_HOME}" STREQUAL "x" )
-	message ( FATAL "SPIRAL_HOME environment variable undefined and not specified on command line" )
+        message ( FATAL "SPIRAL_HOME environment variable undefined and not specified on command line" )
     endif ()
     set ( SPIRAL_SOURCE_DIR ${SPIRAL_HOME} )
 endif ()

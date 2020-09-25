@@ -25,13 +25,13 @@ building WarpX in 2 steps:
   1. cd to psatd.fftx and run cmake / make install; that will put the necessary
      files for compilation into SpectralAlgorithms
      NOTE: files installed in this step are:
-     	   psatd.fftx.source.cpp
-	   psatd.fftx.codegen.hpp
-	   fftx3.hpp
-	   warpx-fullstep-rho_80.c
-	   warpx-symbol_norho_80.c
-	   warpx-symbol_rho_80.c
-	   
+           psatd.fftx.source.cpp
+           psatd.fftx.codegen.hpp
+           fftx3.hpp
+           warpx-fullstep-rho_80.c
+           warpx-symbol_norho_80.c
+           warpx-symbol_rho_80.c
+   
   2. From the main Warpx folder run cmake / make install to build the whole enchilada
 
 Differences / Changes I made to source files:
