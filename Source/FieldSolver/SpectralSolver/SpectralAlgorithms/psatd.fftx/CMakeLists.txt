@@ -52,6 +52,7 @@ add_custom_command ( OUTPUT ${DRIVER_TARG}.cpp
 
 include_directories ( ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${SPIRAL_SOURCE_DIR}/profiler/targets )
 add_executable ( ${DRIVER_TARG} ${DRIVER_TARG}.cpp )
+set_property ( TARGET ${DRIVER_TARG} PROPERTY CXX_STANDARD 14 )
 
 set ( SRCS_TO_INSTALL )  ##  build list of files as we go...
 
