@@ -52,6 +52,7 @@ add_custom_command ( OUTPUT ${DRIVER_TARG}.cpp
 
 include_directories ( ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${SPIRAL_SOURCE_DIR}/profiler/targets )
 add_executable ( ${DRIVER_TARG} ${DRIVER_TARG}.cpp )
+set_property ( TARGET ${DRIVER_TARG} PROPERTY CXX_STANDARD 14 )
 
 set ( SRCS_TO_INSTALL )  ##  build list of files as we go...
 
@@ -106,8 +107,10 @@ add_custom_target ( NAME ALL
     VERBATIM )
 
 set ( INSTALL_DIR_TARGET ${CMAKE_SOURCE_DIR}/.. )
+set ( INSTALL_INCLUDE_DIR_TARGET ${CMAKE_SOURCE_DIR}/../include )
+set ( OMEGA64_HEADER ${SPIRAL_SOURCE_DIR}/profiler/targets/include/omega64.h )
 
 list ( APPEND SRCS_TO_INSTALL ${CMAKE_SOURCE_DIR}/fftx3.hpp )
 
 install ( FILES ${SRCS_TO_INSTALL} DESTINATION ${INSTALL_DIR_TARGET} )
-
+install ( FILES ${OMEGA64_HEADER} DESTINATION ${INSTALL_INCLUDE_DIR_TARGET} )
