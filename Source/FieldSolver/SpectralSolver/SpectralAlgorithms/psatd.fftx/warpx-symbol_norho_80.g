@@ -7,6 +7,7 @@ Import(packages.fftx, packages.fftx.baseline, fftx.baseline.nonterms,
 conf := FFTXGlobals.defaultWarpXConf();
 opts := FFTXGlobals.getOpts(conf);
 opts.includes := [ ];
+opts.buffPrefixExtra := "NR";
 
 inFields := 11;
 outFields := 6;
