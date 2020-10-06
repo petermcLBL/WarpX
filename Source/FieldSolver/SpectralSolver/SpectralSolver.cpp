@@ -108,6 +108,38 @@ SpectralSolver::compareSpiralForwardStep()
 {
   field_data.compareSpiralForwardStep();
 }
+
+void
+SpectralSolver::scaleSpiralForward()
+{
+  field_data.scaleSpiralForward();
+}
+
+void
+SpectralSolver::scaleSpiralBackward()
+{
+  field_data.scaleSpiralBackward();
+}
+
+void
+SpectralSolver::allBackwardTransform(
+                                     std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+                                     std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield)
+{
+  WARPX_PROFILE("SpectralSolver::allBackwardTransform");
+  field_data.allBackwardTransform(Efield, Bfield);
+}
+
+void
+SpectralSolver::compareSpiralBackwardStep(
+                                          std::array<std::unique_ptr< amrex::MultiFab >, 3>& EfieldBack,
+                                          std::array<std::unique_ptr< amrex::MultiFab >, 3>& BfieldBack,
+                                          std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+                                          std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield)
+{
+  field_data.compareSpiralBackwardStep(EfieldBack, BfieldBack, Efield, Bfield);
+}
+
 #endif
 
 void

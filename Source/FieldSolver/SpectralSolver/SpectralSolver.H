@@ -78,7 +78,22 @@ class SpectralSolver
                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& current,
                            std::unique_ptr<amrex::MultiFab>& rho );
 
+  void scaleSpiralForward();
+
   void compareSpiralForwardStep();
+
+  void scaleSpiralBackward();
+  
+  void allBackwardTransform(
+                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield);
+
+  void compareSpiralBackwardStep(
+                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& EfieldBack,
+                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& BfieldBack,
+                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield);
+
 #endif
   
         /**
