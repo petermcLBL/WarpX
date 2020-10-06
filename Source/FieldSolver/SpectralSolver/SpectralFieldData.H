@@ -64,7 +64,23 @@ class SpectralFieldData
                             std::array<std::unique_ptr< amrex::MultiFab >, 3>& current,
                             std::unique_ptr<amrex::MultiFab>& rho );
 
+  void scaleSpiralForward();
+
+  void scaleSpiralBackward();
+
   void compareSpiralForwardStep();
+
+  // Puts result of IMDPRDFT + TResample into fieldsBackward.
+  void allBackwardTransform(
+                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield);
+
+  void compareSpiralBackwardStep(
+                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& EfieldBack,
+                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& BfieldBack,
+                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
+                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield);
+
 #endif
 
         void ForwardTransform (const amrex::MultiFab& mf, const int field_index,
@@ -86,7 +102,10 @@ class SpectralFieldData
         SpectralField tmpSpectralField; // contains Complexs
 #if WARPX_USE_SPIRAL
         SpectralField fieldsForward;
+        SpectralField fieldsBackward;
         SpectralField copySpectralField;
+        SpectralField spiralFieldHatForward;
+        SpectralField copySpectralFieldBackward;
 #endif
         amrex::MultiFab tmpRealField; // contains Reals
         AnyFFT::FFTplans forward_plan, backward_plan;
