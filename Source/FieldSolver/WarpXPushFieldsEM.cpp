@@ -133,7 +133,7 @@ namespace {
 #endif
 #if WARPX_USE_SPIRAL
         // allForwardTransform should not change the inputs.
-        solver.allForwardTransform(Efield, Bfield, current, rho);
+        // solver.allForwardTransform(Efield, Bfield, current, rho);
 #endif
         // Perform forward Fourier transform
 #ifdef WARPX_DIM_RZ
@@ -182,15 +182,38 @@ namespace {
 #endif
 
 #if WARPX_USE_SPIRAL
+        // Scale by the symbol on tmpSpectralFieldForward.
+        solver.scaleSpiralForward();
+        
         // Compare the WarpX results with Spiral results:
         // fields vs. fieldsForward.
-        solver.compareSpiralForwardStep();
+        // solver.compareSpiralForwardStep();
 #endif
         
         // Advance fields in spectral space
         std::cout << "PushPSATDSinglePatch calling solver.pushSpectralFields()" << std::endl;
         solver.pushSpectralFields();
         std::cout << "PushPSATDSinglePatch called solver.pushSpectralFields()" << std::endl;
+#if WARPX_USE_SPIRAL
+        std::array< std::unique_ptr<amrex::MultiFab>, 3 > EfieldBack;
+        std::array< std::unique_ptr<amrex::MultiFab>, 3 > BfieldBack;
+        for (int idir = 0; idir < 3; idir++)
+          {
+            EfieldBack[idir].reset( new MultiFab(Efield[idir]->boxArray(),
+                                                 Efield[idir]->DistributionMap(),
+                                                 Efield[idir]->nComp(),
+                                                 Efield[idir]->nGrow()) );
+            std::cout<<"Efield["<<idir<<"] boxArray:"<<Efield[idir]->boxArray()<<"\n";
+            std::cout  << "ghost :"<< Efield[idir]->nGrow()<< "\n";
+            BfieldBack[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
+                                                 Bfield[idir]->DistributionMap(),
+                                                 Bfield[idir]->nComp(),
+                                                 Bfield[idir]->nGrow()) );
+          }
+        
+        // allBackwardTransform should not change the inputs.
+        // solver.allBackwardTransform(EfieldBack, BfieldBack);
+#endif
         // Perform backward Fourier Transform
 #ifdef WARPX_DIM_RZ
         solver.BackwardTransform(*Efield[0], Idx::Ex,
@@ -225,6 +248,15 @@ namespace {
             solver.BackwardTransform(*Bfield_avg[1], Idx::By_avg);
             solver.BackwardTransform(*Bfield_avg[2], Idx::Bz_avg);
         }
+#endif
+
+#if WARPX_USE_SPIRAL
+        solver.scaleSpiralBackward();
+
+        // Compare the WarpX results with Spiral results:
+        // fields vs. fieldsBackward.
+        // solver.compareSpiralBackwardStep(EfieldBack, BfieldBack,
+        // Efield, Bfield);
 #endif
 
 #if WARPX_USE_FULL_SPIRAL
