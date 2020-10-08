@@ -66,6 +66,8 @@ class SpectralFieldData
 
   void scaleSpiralForward();
 
+  void setCopySpectralFieldBackward();
+
   void scaleSpiralBackward();
 
   void compareSpiralForwardStep();
