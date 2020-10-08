@@ -116,6 +116,12 @@ SpectralSolver::scaleSpiralForward()
 }
 
 void
+SpectralSolver::setCopySpectralFieldBackward()
+{
+  field_data.setCopySpectralFieldBackward();
+}
+
+void
 SpectralSolver::scaleSpiralBackward()
 {
   field_data.scaleSpiralBackward();

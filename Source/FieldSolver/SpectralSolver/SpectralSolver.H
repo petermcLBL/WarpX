@@ -82,6 +82,8 @@ class SpectralSolver
 
   void compareSpiralForwardStep();
 
+  void setCopySpectralFieldBackward();
+
   void scaleSpiralBackward();
   
   void allBackwardTransform(
