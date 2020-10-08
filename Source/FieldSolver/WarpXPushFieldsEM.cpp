@@ -66,38 +66,6 @@ namespace {
           std::cout << "current[1] on " << JyFab.box() << std::endl;
           std::cout << "current[2] on " << JzFab.box() << std::endl;
           std::cout << "rho on " << rhoFab.box() << std::endl;
-          
-          Array4<Real> Ex4 = ExFab.array();
-          Array4<Real> Ey4 = EyFab.array();
-          Array4<Real> Ez4 = EzFab.array();
-          Array4<Real> Bx4 = BxFab.array();
-          Array4<Real> By4 = ByFab.array();
-          Array4<Real> Bz4 = BzFab.array();
-          Array4<Real> Jx4 = JxFab.array();
-          Array4<Real> Jy4 = JyFab.array();
-          Array4<Real> Jz4 = JzFab.array();
-          Array4<Real> rho4 = rhoFab.array();
-
-          std::cout << "At (10, 11, 12): " << std::endl;
-          std::cout << "E = "
-                    << Ex4(10, 11, 12, 0) << ", "
-                    << Ey4(10, 11, 12, 0) << ", "
-                    << Ez4(10, 11, 12, 0)
-                    << std::endl;
-          std::cout << "B = "
-                    << Bx4(10, 11, 12, 0) << ", "
-                    << By4(10, 11, 12, 0) << ", "
-                    << Bz4(10, 11, 12, 0)
-                    << std::endl;
-          std::cout << "J = "
-                    << Jx4(10, 11, 12, 0) << ", "
-                    << Jy4(10, 11, 12, 0) << ", "
-                    << Jz4(10, 11, 12, 0)
-                    << std::endl;
-          std::cout << "rho = "
-                    << rho4(10, 11, 12, 0) << ", "
-                    << rho4(10, 11, 12, 1)
-                    << std::endl;
         }
         // END DEBUG
 
@@ -113,12 +81,20 @@ namespace {
                                                 Efield[idir]->DistributionMap(),
                                                 Efield[idir]->nComp(),
                                                 Efield[idir]->nGrow()) );
-            std::cout<<"Efield["<<idir<<"] boxArray:"<<Efield[idir]->boxArray()<<"\n";
-            std::cout  << "ghost :"<< Efield[idir]->nGrow()<< "\n";
-             BfieldNew[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
+            std::cout << "EfieldNew[" << idir << "]"
+                      << " ghost " << Efield[idir]->nGrow()
+                      << ", comps " << Efield[idir]->nComp()
+                      << ", boxArray "<< Efield[idir]->boxArray() << "\n";
+
+            BfieldNew[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
                                                 Bfield[idir]->DistributionMap(),
                                                 Bfield[idir]->nComp(),
                                                 Bfield[idir]->nGrow()) );
+            std::cout << "BfieldNew[" << idir << "]"
+                      << " ghost " << Bfield[idir]->nGrow()
+                      << ", comps " << Bfield[idir]->nComp()
+                      << ", boxArray "<< Bfield[idir]->boxArray() << "\n";
+            
             diffE[idir].reset( new MultiFab(Efield[idir]->boxArray(),
                                                 Efield[idir]->DistributionMap(),
                                                 Efield[idir]->nComp(),
@@ -132,8 +108,8 @@ namespace {
                           Efield, Bfield, Efield_avg, Bfield_avg, current, rho);
 #endif
 #if WARPX_USE_SPIRAL
-        // allForwardTransform should not change the inputs.
-        // solver.allForwardTransform(Efield, Bfield, current, rho);
+        // Arguments are inputs, unchanged.  Outputs are in fieldsForward.
+        solver.allForwardTransform(Efield, Bfield, current, rho);
 #endif
         // Perform forward Fourier transform
 #ifdef WARPX_DIM_RZ
@@ -187,7 +163,7 @@ namespace {
         
         // Compare the WarpX results with Spiral results:
         // fields vs. fieldsForward.
-        // solver.compareSpiralForwardStep();
+        solver.compareSpiralForwardStep();
 #endif
         
         // Advance fields in spectral space
@@ -203,16 +179,27 @@ namespace {
                                                  Efield[idir]->DistributionMap(),
                                                  Efield[idir]->nComp(),
                                                  Efield[idir]->nGrow()) );
-            std::cout<<"Efield["<<idir<<"] boxArray:"<<Efield[idir]->boxArray()<<"\n";
-            std::cout  << "ghost :"<< Efield[idir]->nGrow()<< "\n";
+            std::cout << "EfieldBack[" << idir << "]"
+                      << " ghost " << Efield[idir]->nGrow()
+                      << ", comps " << Efield[idir]->nComp()
+                      << ", boxArray "<< Efield[idir]->boxArray() << "\n";
+            
             BfieldBack[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
                                                  Bfield[idir]->DistributionMap(),
                                                  Bfield[idir]->nComp(),
                                                  Bfield[idir]->nGrow()) );
+            std::cout << "BfieldBack[" << idir << "]"
+                      << " ghost " << Bfield[idir]->nGrow()
+                      << ", comps " << Bfield[idir]->nComp()
+                      << ", boxArray "<< Bfield[idir]->boxArray() << "\n";
           }
-        
-        // allBackwardTransform should not change the inputs.
-        // solver.allBackwardTransform(EfieldBack, BfieldBack);
+
+        // Set copySpectralFieldBackward to fields.
+        solver.setCopySpectralFieldBackward();
+
+        // These arguments are outputs.
+        // Inputs are copySpectralFieldBackward.
+        solver.allBackwardTransform(EfieldBack, BfieldBack);
 #endif
         // Perform backward Fourier Transform
 #ifdef WARPX_DIM_RZ
@@ -255,11 +242,12 @@ namespace {
 
         // Compare the WarpX results with Spiral results:
         // fields vs. fieldsBackward.
-        // solver.compareSpiralBackwardStep(EfieldBack, BfieldBack,
-        // Efield, Bfield);
+        solver.compareSpiralBackwardStep(EfieldBack, BfieldBack,
+                                         Efield, Bfield);
 #endif
 
 #if WARPX_USE_FULL_SPIRAL
+        /*
         //auto G = WarpX::GetInstance().Geom(0);
         //Geometry G = Geometry(Box({0,0,0},{63,64,64}),RealBox({-1,-1,-1},{1,1,1}),
         //                      CoordSys::cartesian, Array<int,3>({0,0,0}));
@@ -284,8 +272,169 @@ namespace {
         //                         *diffE[0], {{"Ey"}}, G, istep, istep);
 
         istep++;
+        */
         // FIXME: Now find differences between Efield and EfieldNew,
         // Bfield and BfieldNew.
+
+        for (int idir = 0; idir < 3; idir++)
+          {
+            std::unique_ptr< amrex::MultiFab >& EcompNew = EfieldNew[idir];
+            std::unique_ptr< amrex::MultiFab >& Ecomp = Efield[idir];
+            for ( MFIter mfi(*Ecomp); mfi.isValid(); ++mfi ){
+              // compare EcompNew (from Spiral) and Ecomp (from WarpX)
+              std::cout << "compare Spiral full step on E" << idir << std::endl;
+              BaseFab<Real>& EcompNewFab = (*EcompNew)[mfi];
+              BaseFab<Real>& EcompFab = (*Ecomp)[mfi];
+              char amrexstr[30];
+              sprintf(amrexstr, "stepamrexE%d.out", idir);
+              char spiralstr[30];
+              sprintf(spiralstr, "stepspiralE%d.out", idir);
+              const Box& bx = mfi.validbox();
+              FArrayBox diffFab(bx, 1);
+              // components: source, dest, count
+              diffFab.copy(EcompFab, 0, 0, 1);
+              diffFab.minus(EcompNewFab, 0, 0, 1);
+              Array4<Real> amrexArray = EcompFab.array();
+              Array4<Real> spiralArray = EcompNewFab.array();
+              Array4<Real> diffArray = diffFab.array();
+              Real amrex_max = 0.;
+              Real spiral_max = 0.;
+              Real diff_max = 0.;
+              Real amrex2_sum = 0.;
+              Real spiral2_sum = 0.;
+              IntVect amrex_biggest = IntVect(0, 0, 0);
+              IntVect spiral_biggest = IntVect(0, 0, 0);
+              const Dim3 bxLo = amrex::lbound(bx);
+              const Dim3 bxHi = amrex::ubound(bx);          
+              FILE* fp_amrex = fopen(amrexstr, "w");
+              FILE* fp_spiral = fopen(spiralstr, "w");
+              for (int k = bxLo.z; k <= bxHi.z; ++k)
+                for (int j = bxLo.y; j <= bxHi.y; ++j)
+                  for (int i = bxLo.x; i <= bxHi.x; ++i)
+                    {
+                      Real amrex_val = amrexArray(i, j, k);
+                      Real spiral_val = spiralArray(i, j, k);
+                      fprintf(fp_amrex, " %3d%3d%3d%26.15e\n", i, j, k, amrex_val);
+                      fprintf(fp_spiral, " %3d%3d%3d%26.15e\n", i, j, k, spiral_val);
+                      Real amrex_abs = amrex::Math::abs(amrex_val);
+                      Real spiral_abs = amrex::Math::abs(spiral_val);
+                      amrex2_sum += amrex_abs * amrex_abs;
+                      spiral2_sum += spiral_abs * spiral_abs;
+                      if (amrex_abs > amrex_max)
+                        {
+                          amrex_max = amrex_abs;
+                          amrex_biggest = IntVect(i, j, k);
+                        }
+                      if (spiral_abs > spiral_max)
+                        {
+                          spiral_max = spiral_abs;
+                          spiral_biggest = IntVect(i, j, k);
+                        }
+                      Real diff_abs = amrex::Math::abs(diffArray(i, j, k));
+                      if (diff_abs > diff_max)
+                        {
+                          diff_max = diff_abs;
+                        }
+                    }
+              fclose(fp_amrex);
+              fclose(fp_spiral);
+              std::cout << "Full step 3DFFT sum(|E" << idir << "|^2) = "
+                        << amrex2_sum
+                        << " sum(|spiral|^2) = " << spiral2_sum
+                        << " ratio " << (spiral2_sum/amrex2_sum)
+                        << std::endl;
+              std::cout << "Full step 3DFFT |diff(E" << idir << ")| <= "
+                        << diff_max
+                        << " |solution| <= " << amrex_max
+                        << " relative " << (diff_max/amrex_max)
+                        << std::endl;
+              std::cout << "Location of biggest"
+                        << " amrex " << amrex_biggest
+                        << " spiral " << spiral_biggest
+                        << " within " << bx
+                        << std::endl;
+            }
+          }
+        
+        for (int idir = 0; idir < 3; idir++)
+          {
+            std::unique_ptr< amrex::MultiFab >& Bcomp = Bfield[idir];
+            std::unique_ptr< amrex::MultiFab >& BcompNew = BfieldNew[idir];
+            for ( MFIter mfi(*Bcomp); mfi.isValid(); ++mfi ){
+              // compare BcompNew (from Spiral) and Bcomp (from WarpX)
+              std::cout << "compare Spiral full step on B" << idir << std::endl;
+              BaseFab<Real>& BcompNewFab = (*BcompNew)[mfi];
+              BaseFab<Real>& BcompFab = (*Bcomp)[mfi];
+              char amrexstr[30];
+              sprintf(amrexstr, "stepamrexB%d.out", idir);
+              char spiralstr[30];
+              sprintf(spiralstr, "stepspiralB%d.out", idir);
+              const Box& bx = mfi.validbox();
+              FArrayBox diffFab(bx, 1);
+              // components: source, dest, count
+              diffFab.copy(BcompFab, 0, 0, 1);
+              diffFab.minus(BcompNewFab, 0, 0, 1);
+              Array4<Real> amrexArray = BcompFab.array();
+              Array4<Real> spiralArray = BcompNewFab.array();
+              Array4<Real> diffArray = diffFab.array();
+              Real amrex_max = 0.;
+              Real spiral_max = 0.;
+              Real diff_max = 0.;
+              Real amrex2_sum = 0.;
+              Real spiral2_sum = 0.;
+              IntVect amrex_biggest = IntVect(0, 0, 0);
+              IntVect spiral_biggest = IntVect(0, 0, 0);
+              const Dim3 bxLo = amrex::lbound(bx);
+              const Dim3 bxHi = amrex::ubound(bx);          
+              FILE* fp_amrex = fopen(amrexstr, "w");
+              FILE* fp_spiral = fopen(spiralstr, "w");
+              for (int k = bxLo.z; k <= bxHi.z; ++k)
+                for (int j = bxLo.y; j <= bxHi.y; ++j)
+                  for (int i = bxLo.x; i <= bxHi.x; ++i)
+                    {
+                      Real amrex_val = amrexArray(i, j, k);
+                      Real spiral_val = spiralArray(i, j, k);
+                      fprintf(fp_amrex, " %3d%3d%3d%26.15e\n", i, j, k, amrex_val);
+                      fprintf(fp_spiral, " %3d%3d%3d%26.15e\n", i, j, k, spiral_val);
+                      Real amrex_abs = amrex::Math::abs(amrex_val);
+                      Real spiral_abs = amrex::Math::abs(spiral_val);
+                      amrex2_sum += amrex_abs * amrex_abs;
+                      spiral2_sum += spiral_abs * spiral_abs;
+                      if (amrex_abs > amrex_max)
+                        {
+                          amrex_max = amrex_abs;
+                          amrex_biggest = IntVect(i, j, k);
+                        }
+                      if (spiral_abs > spiral_max)
+                        {
+                          spiral_max = spiral_abs;
+                          spiral_biggest = IntVect(i, j, k);
+                        }
+                      Real diff_abs = amrex::Math::abs(diffArray(i, j, k));
+                      if (diff_abs > diff_max)
+                        {
+                          diff_max = diff_abs;
+                        }
+                    }
+              fclose(fp_amrex);
+              fclose(fp_spiral);
+              std::cout << "Full step 3DFFT sum(|B" << idir << "|^2) = "
+                        << amrex2_sum
+                        << " sum(|spiral|^2) = " << spiral2_sum
+                        << " ratio " << (spiral2_sum/amrex2_sum)
+                        << std::endl;
+              std::cout << "Full step 3DFFT |diff(B" << idir << ")| <= "
+                        << diff_max
+                        << " |solution| <= " << amrex_max
+                        << " relative " << (diff_max/amrex_max)
+                        << std::endl;
+              std::cout << "Location of biggest"
+                        << " amrex " << amrex_biggest
+                        << " spiral " << spiral_biggest
+                        << " within " << bx
+                        << std::endl;
+            }
+          }
 #endif
     }
 }
