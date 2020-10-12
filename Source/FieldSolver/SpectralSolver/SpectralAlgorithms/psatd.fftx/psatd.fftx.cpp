@@ -120,8 +120,8 @@ void trace(const char* name)
   resample({{0,-0.5,0}},bigIn[7],inputs[7]);
   resample({{-0.5,0,0}},bigIn[8],inputs[8]);
 
-  copy(bigIn[9],inputs[9]);
-  copy(bigIn[10],inputs[10]);
+  resample({{0.0,0.0,0.0}},bigIn[9],inputs[9]);
+  resample({{0.0,0.0,0.0}},bigIn[10],inputs[10]);
 
 
   MDPRDFT(bigBoxes[0].m_domain.extents().projectC(), 11, bigBoxes[1], bigBoxes[0]);

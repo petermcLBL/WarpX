@@ -69,6 +69,8 @@ inline void defineArrays(std::array<array_t<3,double>,11>& a_inputs,
   */
 
   /*  C ordering  */
+  box_t<3> node(point_t<3>({{1,1,1}}),
+                point_t<3>({{npx, npy, npz}}));
   box_t<3> cell(point_t<3>({{1,1,1}}),
                  point_t<3>({{nz,ny,nx}}));
   box_t<3> xface(point_t<3>({{1,1,1}}),
@@ -95,7 +97,7 @@ inline void defineArrays(std::array<array_t<3,double>,11>& a_inputs,
   std::array<array_t<3,double>,11> input = {xedge, yedge, zedge,/*E*/
                                              xface, yface, zface,/*B*/
                                              xedge, yedge, zedge,/*J*/
-                                             cell, cell};
+                                             node, node};
 
 
   /* Fortran ordering  
