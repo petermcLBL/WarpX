@@ -12,8 +12,12 @@ static const char* CONTRACTION = R"(
     ix := Ind(xdim);
     iy := Ind(ydim);
     iz := Ind(zdim);
-    c:=1.0;
-    ep0 := 1.0;
+    #c:=1.0;
+    opts.includes := ["\"WarpXConst.H\"","<cstdlib>" ];
+    c:=var("PhysConst::c", TReal);
+    c2:=c^2;
+    #ep0 := 1.0;
+    ep0:=var("PhysConst::ep0", TReal);
     invep0 := 1.0 / ep0;
     ii := lin_idx(iz, iy, ix);
     fmkx := nth(nth(symvar, 0), ix);
@@ -27,39 +31,39 @@ static const char* CONTRACTION = R"(
 
     rmat := TSparseMat([6,11], [
         [0, [0, fcv],
-            [4, cxpack(0, -fmkz * c^2 * fsckv)],
-            [5, cxpack(0, fmky * c^2 * fsckv)],
-            [6, -invep0 * fsckv],
-            [9, cxpack(0, -fmkx * fx2v)],
-            [10, cxpack(0, fmkx * fx3v)]],
-        [1, [1, fcv],
-            [3, cxpack(0, fmkz * c^2 * fsckv)], 
-            [5, cxpack(0, -fmkx * c^2 * fsckv)],
-            [7, -invep0 * fsckv],
-            [9, cxpack(0, -fmky * fx2v)],
-            [10, cxpack(0, fmky * fx3v)]],
-        [2, [2, fcv],
-            [3, cxpack(0, -fmky * c^2 * fsckv)],
-            [4,  cxpack(0, fmkx * c^2 * fsckv)],
-            [8, -invep0 * fsckv],
-            [9, cxpack(0, -fmkz * fx2v)],
-            [10, cxpack(0, fmkz * fx3v)]],
+            [4, cxpack(0, -fmkz * c2 * fsckv/norm)],
+            [5, cxpack(0, fmky * c2 * fsckv/norm)],
+            [6, -invep0 * fsckv/norm],
+            [9, cxpack(0, -fmkx * fx2v/norm)],
+            [10, cxpack(0, fmkx * fx3v/norm)]],
+        [1, [1, fcv/norm],
+            [3, cxpack(0, fmkz * c2 * fsckv/norm)], 
+            [5, cxpack(0, -fmkx * c2 * fsckv/norm)],
+            [7, -invep0 * fsckv/norm],
+            [9, cxpack(0, -fmky * fx2v/norm)],
+            [10, cxpack(0, fmky * fx3v/norm)]],
+        [2, [2, fcv/norm],
+            [3, cxpack(0, -fmky * c2 * fsckv/norm)],
+            [4,  cxpack(0, fmkx * c2 * fsckv/norm)],
+            [8, -invep0 * fsckv/norm],
+            [9, cxpack(0, -fmkz * fx2v/norm)],
+            [10, cxpack(0, fmkz * fx3v/norm)]],
     
-        [3, [1, cxpack(0, fmkz * fsckv)],
-            [2, cxpack(0, -fmky * fsckv)],
-            [3, fcv],
-            [7, cxpack(0, -fmkz * fx1v)],
-            [8, cxpack(0, fmky * fx1v)]],
-        [4, [0, cxpack(0, -fmkz * fsckv)],
-            [2, cxpack(0, fmkx * fsckv)],
-            [4, fcv],
-            [6, cxpack(0, fmkz * fx1v)],
-            [8, cxpack(0, -fmkx * fx1v)]],
-        [5, [0, cxpack(0, fmky * fsckv)],      
-            [1, cxpack(0, -fmkx * fsckv)],
-            [5, fcv],
-            [6, cxpack(0, -fmky * fx1v)],
-            [7, cxpack(0, fmkx * fx1v)]]
+        [3, [1, cxpack(0, fmkz * fsckv/norm)],
+            [2, cxpack(0, -fmky * fsckv/norm)],
+            [3, fcv/norm],
+            [7, cxpack(0, -fmkz * fx1v/norm)],
+            [8, cxpack(0, fmky * fx1v/norm)]],
+        [4, [0, cxpack(0, -fmkz * fsckv/norm)],
+            [2, cxpack(0, fmkx * fsckv/norm)],
+            [4, fcv/norm],
+            [6, cxpack(0, fmkz * fx1v/norm)],
+            [8, cxpack(0, -fmkx * fx1v/norm)]],
+        [5, [0, cxpack(0, fmky * fsckv/norm)],      
+            [1, cxpack(0, -fmkx * fsckv/norm)],
+            [5, fcv/norm],
+            [6, cxpack(0, -fmky * fx1v/norm)],
+            [7, cxpack(0, fmkx * fx1v/norm)]]
         ]);)";
 
 void trace(const char* name)
@@ -90,6 +94,7 @@ void trace(const char* name)
   std::string contraction = std::regex_replace(CONTRACTION,std::regex("xdim"),std::to_string(xdim));
   contraction = std::regex_replace(contraction,std::regex("ydim"),std::to_string(ydim));
   contraction = std::regex_replace(contraction,std::regex("zdim"),std::to_string(zdim));
+  contraction = std::regex_replace(contraction,std::regex("norm"),std::to_string(norm));
   contraction = std::regex_replace(contraction,std::regex("fmkx"),"var_"+std::to_string(symvars[0].id()));
   contraction = std::regex_replace(contraction,std::regex("fmky"),"var_"+std::to_string(symvars[1].id()));
   contraction = std::regex_replace(contraction,std::regex("fmkz"),"var_"+std::to_string(symvars[2].id()));

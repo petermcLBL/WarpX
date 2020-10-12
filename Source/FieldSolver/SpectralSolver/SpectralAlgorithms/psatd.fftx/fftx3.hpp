@@ -518,6 +518,8 @@ namespace fftx
     #ifndef PLAN_CODEGEN_H
     #define PLAN_CODEGEN_H
 
+    #include "fftx3.hpp"
+
     extern void init_PLAN_spiral(); 
     extern void PLAN_spiral(double** X, double** Y, double** symvar); 
     extern void destroy_PLAN_spiral();
