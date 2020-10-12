@@ -11,6 +11,7 @@
 using namespace fftx;
 
 const int nx=80, ny=80, nz=80;
+const int norm = nx*ny*nz;
 const int npx = nx+1, npy = ny+1, npz = nz+1;
 
 inline void defineBigBoxes(std::array<array_t<4, double>,4>& a_bigBoxes)
