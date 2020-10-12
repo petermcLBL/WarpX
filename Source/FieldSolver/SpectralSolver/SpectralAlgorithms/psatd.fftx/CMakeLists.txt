@@ -90,6 +90,11 @@ file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_FULLSTEP_RHO}.g _gfile)
 create_source_file ( ${_gfile} ${WARPX_FULLSTEP_RHO}.c )
 list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_FULLSTEP_RHO}.c )
 
+set ( WARPX_FULLSTEP_NORHO warpx-fullstep-norho_80 )
+file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_FULLSTEP_NORHO}.g _gfile)
+create_source_file ( ${_gfile} ${WARPX_FULLSTEP_NORHO}.c )
+list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_FULLSTEP_NORHO}.c )
+
 set ( WARPX_SYMBOL_NORHO warpx-symbol_norho_80 )
 file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_SYMBOL_NORHO}.g _gfile)
 create_source_file ( ${_gfile} ${WARPX_SYMBOL_NORHO}.c )
@@ -99,6 +104,36 @@ set ( WARPX_SYMBOL_RHO   warpx-symbol_rho_80   )
 file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_SYMBOL_RHO}.g _gfile)
 create_source_file ( ${_gfile} ${WARPX_SYMBOL_RHO}.c )
 list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_SYMBOL_RHO}.c )
+
+set ( WARPX_FORWARD_ONLY   warpx-forward-only_80   )
+file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_FORWARD_ONLY}.g _gfile)
+create_source_file ( ${_gfile} ${WARPX_FORWARD_ONLY}.c )
+list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_FORWARD_ONLY}.c )
+
+set ( WARPX_BACKWARD_ONLY   warpx-backward-only_80   )
+file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_BACKWARD_ONLY}.g _gfile)
+create_source_file ( ${_gfile} ${WARPX_BACKWARD_ONLY}.c )
+list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_BACKWARD_ONLY}.c )
+
+set ( WARPX_FORWARD_STEP   warpx-forward-step_80   )
+file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_FORWARD_STEP}.g _gfile)
+create_source_file ( ${_gfile} ${WARPX_FORWARD_STEP}.c )
+list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_FORWARD_STEP}.c )
+
+set ( WARPX_BACKWARD_STEP   warpx-backward-step_80   )
+file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_BACKWARD_STEP}.g _gfile)
+create_source_file ( ${_gfile} ${WARPX_BACKWARD_STEP}.c )
+list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_BACKWARD_STEP}.c )
+
+set ( WARPX_SCALE_FORWARD   warpx-scale-forward_80   )
+file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_SCALE_FORWARD}.g _gfile)
+create_source_file ( ${_gfile} ${WARPX_SCALE_FORWARD}.c )
+list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_SCALE_FORWARD}.c )
+
+set ( WARPX_SCALE_BACKWARD   warpx-scale-backward_80   )
+file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/${WARPX_SCALE_BACKWARD}.g _gfile)
+create_source_file ( ${_gfile} ${WARPX_SCALE_BACKWARD}.c )
+list ( APPEND SRCS_TO_INSTALL ${CMAKE_BINARY_DIR}/${WARPX_SCALE_BACKWARD}.c )
 
 add_custom_target ( NAME ALL
     DEPENDS ${SPIRAL_PLAN} ${SPIRAL_GENERATOR} ${SPIRAL_C_CODE} ${SRCS_TO_INSTALL}
