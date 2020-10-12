@@ -104,6 +104,7 @@ namespace {
                                                 Bfield[idir]->nComp(),
                                             0 ));
           }
+        std::cout<<"taking full FFTX step\n";
         solver.stepSpiral(EfieldNew, BfieldNew,
                           Efield, Bfield, Efield_avg, Bfield_avg, current, rho);
 #endif
@@ -247,32 +248,36 @@ namespace {
 #endif
 
 #if WARPX_USE_FULL_SPIRAL
-        /*
+        
         //auto G = WarpX::GetInstance().Geom(0);
         //Geometry G = Geometry(Box({0,0,0},{63,64,64}),RealBox({-1,-1,-1},{1,1,1}),
         //                      CoordSys::cartesian, Array<int,3>({0,0,0}));
-        EfieldNew[0]->Subtract(*diffE[0], *Efield[0],0,0,1,0);
+        MultiFab::Copy(*diffE[0], *EfieldNew[0],0,0,1,0);
+        diffE[0]->minus(*Efield[0],0,1,0);
         double normEx = diffE[0]->norminf(0,0);
+        std::cout<<"Ex Old Norm: "<<Efield[0]->norminf(0,0)<<"\n";
+        std::cout<<"Ex FFTX Norm: "<<EfieldNew[0]->norminf(0,0)<<"\n";                                       
         std::cout<<"Ex norm old vs spiral = "<<normEx<<"\n";
  
         static int istep = 0;
         // WriteSingleLevelPlotfile(amrex::Concatenate("pltEx",istep),
         //                          *diffE[0], {{"Ex"}}, G, istep, istep);
         
-        EfieldNew[1]->Subtract(*diffE[1], *Efield[1],0,0,1,0);
+        MultiFab::Copy(*diffE[1], *EfieldNew[1],0,0,1,0);
+        diffE[1]->minus(*Efield[1],0,1,0);
         double normEy = diffE[1]->norminf(0,0);
+        std::cout<<"Ey Old Norm: "<<Efield[1]->norminf(0,0)<<"\n";
+        std::cout<<"Ey FFTX Norm: "<<EfieldNew[1]->norminf(0,0)<<"\n";                                          
         std::cout<<"Ey norm old vs spiral = "<<normEy<<"\n";
 
-        EfieldNew[2]->Subtract(*diffE[2], *Efield[2],0,0,1,0);
-        double normEz = diffE[2]->norminf(0,0);
-        std::cout<<"Ez norm old vs spiral = "<<normEz<<"\n";
+ 
 
         // this works, but is irrelevant, as rho is not altered in this operation
         //WriteSingleLevelPlotfile(amrex::Concatenate("pltEy",istep),
         //                         *diffE[0], {{"Ey"}}, G, istep, istep);
 
         istep++;
-        */
+        
         // FIXME: Now find differences between Efield and EfieldNew,
         // Bfield and BfieldNew.
 
