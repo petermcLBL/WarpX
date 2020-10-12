@@ -378,7 +378,9 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
       warpxfull_rho_80(outputDataPtr, inputDataPtr, sym_for_psatd);
       std::cout << "Called warpxfull_rho_80" << std::endl;
       */
+      std::cout << "Calling psatd::transform" << std::endl;
       psatd::transform(inputArray, outputArray, symArray);
+      std::cout << "Called psatd::transform" << std::endl;
     } else {
     }
 
