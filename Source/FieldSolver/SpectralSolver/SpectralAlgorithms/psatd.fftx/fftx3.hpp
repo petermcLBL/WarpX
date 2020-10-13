@@ -541,7 +541,7 @@ namespace fftx
         for(int i=0; i<OUT_DIM; i++) output[i] = destination[i].m_data.local();
         for(int i=0; i<S_DIM; i++) sym[i] = symvar[i].m_data.local();
 
-        PLAN_spiral(input, output, sym);
+        PLAN_spiral(output, input, sym);
    
     // dummy return handle for now
       fftx::handle_t rtn;

@@ -30,7 +30,7 @@ static const char* CONTRACTION = R"(
     fx3v := nth(nth(symvar, 7), ii);
 
     rmat := TSparseMat([6,11], [
-        [0, [0, fcv],
+        [0, [0, fcv/norm],
             [4, cxpack(0, -fmkz * c2 * fsckv/norm)],
             [5, cxpack(0, fmky * c2 * fsckv/norm)],
             [6, -invep0 * fsckv/norm],
