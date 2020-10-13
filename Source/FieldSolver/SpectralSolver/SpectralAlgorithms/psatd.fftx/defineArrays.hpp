@@ -121,8 +121,8 @@ inline void defineArrays(std::array<array_t<3,double>,11>& a_inputs,
 
 
 
-  std::array<array_t<3, double >,6> output ={zedge, yedge, xedge,
-                                              zface, yface, xface};
+  std::array<array_t<3, double >,6> output ={xedge, yedge, zedge,
+                                             xface, yface, zface};
 
   std::swap(input,  a_inputs);
   std::swap(output, a_outputs);
