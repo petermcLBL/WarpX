@@ -98,11 +98,11 @@ namespace {
             diffE[idir].reset( new MultiFab(Efield[idir]->boxArray(),
                                                 Efield[idir]->DistributionMap(),
                                                 Efield[idir]->nComp(),
-                                            0 ));
+                                            -4 ));
             diffB[idir].reset( new MultiFab(Bfield[idir]->boxArray(),
                                                 Bfield[idir]->DistributionMap(),
                                                 Bfield[idir]->nComp(),
-                                            0 ));
+                                            -4 ));
           }
         std::cout<<"taking full FFTX step\n";
         solver.stepSpiral(EfieldNew, BfieldNew,
@@ -252,29 +252,26 @@ namespace {
         //auto G = WarpX::GetInstance().Geom(0);
         //Geometry G = Geometry(Box({0,0,0},{63,64,64}),RealBox({-1,-1,-1},{1,1,1}),
         //                      CoordSys::cartesian, Array<int,3>({0,0,0}));
-        MultiFab::Copy(*diffE[0], *EfieldNew[0],0,0,1,0);
-        diffE[0]->minus(*Efield[0],0,1,0);
-        double normEx = diffE[0]->norminf(0,0);
-        std::cout<<"Ex Old Norm: "<<Efield[0]->norminf(0,0)<<"\n";
-        std::cout<<"Ex FFTX Norm: "<<EfieldNew[0]->norminf(0,0)<<"\n";                                       
-        std::cout<<"Ex norm old vs spiral = "<<normEx<<"\n";
+        for(int i=0; i< 3; i++)
+          {
+            MultiFab::Copy(*diffE[i], *EfieldNew[i],0,0,1,0);
+            diffE[i]->minus(*Efield[i],0,1,0);
+            double normE = diffE[i]->norminf(0,0);
+            std::cout<<"E"<<i<<" Old Norm: "<<Efield[i]->norminf(0,0)<<"\n";
+            std::cout<<"E"<<i<<" FFTX Norm: "<<EfieldNew[i]->norminf(0,0)<<"\n";
+            auto& FAB1 = Efield[i]->get(0);
+            auto& FAB2 = EfieldNew[i]->get(0);
+            auto& FAB3 = diffE[i]->get(0);
+            IntVect m = FAB1.maxIndex();
+            std::cout<<"maxIndex:"<<m<<" Warp="<<FAB1(m)<<" FFTX="
+                     <<FAB2(m)<<" diff="<<FAB3(m)
+                     <<"\n";
+                       std::cout<<"E"<<i<<" norm Warp vs FFTX = "<<normE<<"  maxIndex: "<<FAB3.maxIndex() <<" val: "<<FAB3(FAB3.maxIndex()) <<"\n";
+          }
  
         static int istep = 0;
         // WriteSingleLevelPlotfile(amrex::Concatenate("pltEx",istep),
         //                          *diffE[0], {{"Ex"}}, G, istep, istep);
-        
-        MultiFab::Copy(*diffE[1], *EfieldNew[1],0,0,1,0);
-        diffE[1]->minus(*Efield[1],0,1,0);
-        double normEy = diffE[1]->norminf(0,0);
-        std::cout<<"Ey Old Norm: "<<Efield[1]->norminf(0,0)<<"\n";
-        std::cout<<"Ey FFTX Norm: "<<EfieldNew[1]->norminf(0,0)<<"\n";                                          
-        std::cout<<"Ey norm old vs spiral = "<<normEy<<"\n";
-
- 
-
-        // this works, but is irrelevant, as rho is not altered in this operation
-        //WriteSingleLevelPlotfile(amrex::Concatenate("pltEy",istep),
-        //                         *diffE[0], {{"Ey"}}, G, istep, istep);
 
         istep++;
         
