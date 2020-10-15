@@ -1,4 +1,6 @@
-# Adapted from /home/petermc/work/WarpX/Examples/Tests/Langmuir/inputs_3d
+# Adapted from Examples/Tests/Langmuir/inputs_3d_multi_rt
+# with psatd.update_with_rho=1,
+# and without the diagnostics.
 
 # Maximum number of time steps
 max_step = 40
