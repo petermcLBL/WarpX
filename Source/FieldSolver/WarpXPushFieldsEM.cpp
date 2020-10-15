@@ -248,7 +248,7 @@ namespace {
 #endif
 
 #if WARPX_USE_FULL_SPIRAL
-        
+        /*
         //auto G = WarpX::GetInstance().Geom(0);
         //Geometry G = Geometry(Box({0,0,0},{63,64,64}),RealBox({-1,-1,-1},{1,1,1}),
         //                      CoordSys::cartesian, Array<int,3>({0,0,0}));
@@ -274,10 +274,13 @@ namespace {
         //                          *diffE[0], {{"Ex"}}, G, istep, istep);
 
         istep++;
-        
+        */
         // FIXME: Now find differences between Efield and EfieldNew,
         // Bfield and BfieldNew.
 
+        Real amrexE2max = 0.;
+        Real spiralE2max = 0.;
+        Real diffE2max = 0.;
         for (int idir = 0; idir < 3; idir++)
           {
             std::unique_ptr< amrex::MultiFab >& EcompNew = EfieldNew[idir];
@@ -287,10 +290,10 @@ namespace {
               std::cout << "compare Spiral full step on E" << idir << std::endl;
               BaseFab<Real>& EcompNewFab = (*EcompNew)[mfi];
               BaseFab<Real>& EcompFab = (*Ecomp)[mfi];
-              char amrexstr[30];
-              sprintf(amrexstr, "stepamrexE%d.out", idir);
-              char spiralstr[30];
-              sprintf(spiralstr, "stepspiralE%d.out", idir);
+              // char amrexstr[30];
+              // sprintf(amrexstr, "stepamrexE%d.out", idir);
+              // char spiralstr[30];
+              // sprintf(spiralstr, "stepspiralE%d.out", idir);
               const Box& bx = mfi.validbox();
               FArrayBox diffFab(bx, 1);
               // components: source, dest, count
@@ -308,16 +311,16 @@ namespace {
               IntVect spiral_biggest = IntVect(0, 0, 0);
               const Dim3 bxLo = amrex::lbound(bx);
               const Dim3 bxHi = amrex::ubound(bx);          
-              FILE* fp_amrex = fopen(amrexstr, "w");
-              FILE* fp_spiral = fopen(spiralstr, "w");
+              // FILE* fp_amrex = fopen(amrexstr, "w");
+              // FILE* fp_spiral = fopen(spiralstr, "w");
               for (int k = bxLo.z; k <= bxHi.z; ++k)
                 for (int j = bxLo.y; j <= bxHi.y; ++j)
                   for (int i = bxLo.x; i <= bxHi.x; ++i)
                     {
                       Real amrex_val = amrexArray(i, j, k);
                       Real spiral_val = spiralArray(i, j, k);
-                      fprintf(fp_amrex, " %3d%3d%3d%26.15e\n", i, j, k, amrex_val);
-                      fprintf(fp_spiral, " %3d%3d%3d%26.15e\n", i, j, k, spiral_val);
+                      // fprintf(fp_amrex, " %3d%3d%3d%26.15e\n", i, j, k, amrex_val);
+                      // fprintf(fp_spiral, " %3d%3d%3d%26.15e\n", i, j, k, spiral_val);
                       Real amrex_abs = amrex::Math::abs(amrex_val);
                       Real spiral_abs = amrex::Math::abs(spiral_val);
                       amrex2_sum += amrex_abs * amrex_abs;
@@ -338,14 +341,17 @@ namespace {
                           diff_max = diff_abs;
                         }
                     }
-              fclose(fp_amrex);
-              fclose(fp_spiral);
-              std::cout << "Full step 3DFFT sum(|E" << idir << "|^2) = "
+              // fclose(fp_amrex);
+              // fclose(fp_spiral);
+              amrexE2max += amrex_max * amrex_max;
+              spiralE2max += spiral_max * spiral_max;
+              diffE2max += diff_max * diff_max;
+              std::cout << "Full step sum(|E" << idir << "|^2) = "
                         << amrex2_sum
                         << " sum(|spiral|^2) = " << spiral2_sum
                         << " ratio " << (spiral2_sum/amrex2_sum)
                         << std::endl;
-              std::cout << "Full step 3DFFT |diff(E" << idir << ")| <= "
+              std::cout << "Full step |diff(E" << idir << ")| <= "
                         << diff_max
                         << " |solution| <= " << amrex_max
                         << " relative " << (diff_max/amrex_max)
@@ -358,6 +364,9 @@ namespace {
             }
           }
         
+        Real amrexB2max = 0.;
+        Real spiralB2max = 0.;
+        Real diffB2max = 0.;
         for (int idir = 0; idir < 3; idir++)
           {
             std::unique_ptr< amrex::MultiFab >& Bcomp = Bfield[idir];
@@ -367,10 +376,10 @@ namespace {
               std::cout << "compare Spiral full step on B" << idir << std::endl;
               BaseFab<Real>& BcompNewFab = (*BcompNew)[mfi];
               BaseFab<Real>& BcompFab = (*Bcomp)[mfi];
-              char amrexstr[30];
-              sprintf(amrexstr, "stepamrexB%d.out", idir);
-              char spiralstr[30];
-              sprintf(spiralstr, "stepspiralB%d.out", idir);
+              // char amrexstr[30];
+              // sprintf(amrexstr, "stepamrexB%d.out", idir);
+              // char spiralstr[30];
+              // sprintf(spiralstr, "stepspiralB%d.out", idir);
               const Box& bx = mfi.validbox();
               FArrayBox diffFab(bx, 1);
               // components: source, dest, count
@@ -388,16 +397,16 @@ namespace {
               IntVect spiral_biggest = IntVect(0, 0, 0);
               const Dim3 bxLo = amrex::lbound(bx);
               const Dim3 bxHi = amrex::ubound(bx);          
-              FILE* fp_amrex = fopen(amrexstr, "w");
-              FILE* fp_spiral = fopen(spiralstr, "w");
+              // FILE* fp_amrex = fopen(amrexstr, "w");
+              // FILE* fp_spiral = fopen(spiralstr, "w");
               for (int k = bxLo.z; k <= bxHi.z; ++k)
                 for (int j = bxLo.y; j <= bxHi.y; ++j)
                   for (int i = bxLo.x; i <= bxHi.x; ++i)
                     {
                       Real amrex_val = amrexArray(i, j, k);
                       Real spiral_val = spiralArray(i, j, k);
-                      fprintf(fp_amrex, " %3d%3d%3d%26.15e\n", i, j, k, amrex_val);
-                      fprintf(fp_spiral, " %3d%3d%3d%26.15e\n", i, j, k, spiral_val);
+                      // fprintf(fp_amrex, " %3d%3d%3d%26.15e\n", i, j, k, amrex_val);
+                      // fprintf(fp_spiral, " %3d%3d%3d%26.15e\n", i, j, k, spiral_val);
                       Real amrex_abs = amrex::Math::abs(amrex_val);
                       Real spiral_abs = amrex::Math::abs(spiral_val);
                       amrex2_sum += amrex_abs * amrex_abs;
@@ -418,14 +427,17 @@ namespace {
                           diff_max = diff_abs;
                         }
                     }
-              fclose(fp_amrex);
-              fclose(fp_spiral);
-              std::cout << "Full step 3DFFT sum(|B" << idir << "|^2) = "
+              // fclose(fp_amrex);
+              // fclose(fp_spiral);
+              amrexB2max += amrex_max * amrex_max;
+              spiralB2max += spiral_max * spiral_max;
+              diffB2max += diff_max * diff_max;
+              std::cout << "Full step sum(|B" << idir << "|^2) = "
                         << amrex2_sum
                         << " sum(|spiral|^2) = " << spiral2_sum
                         << " ratio " << (spiral2_sum/amrex2_sum)
                         << std::endl;
-              std::cout << "Full step 3DFFT |diff(B" << idir << ")| <= "
+              std::cout << "Full step |diff(B" << idir << ")| <= "
                         << diff_max
                         << " |solution| <= " << amrex_max
                         << " relative " << (diff_max/amrex_max)
@@ -437,6 +449,32 @@ namespace {
                         << std::endl;
             }
           }
+
+        Real diffEmax = std::sqrt(diffE2max);
+        Real diffBmax = std::sqrt(diffB2max);
+        Real Emax = std::sqrt(amrexE2max);
+        Real Bmax = std::sqrt(amrexB2max);
+        Real const c2 = PhysConst::c * PhysConst::c;
+        Real compositeEmax = std::sqrt(amrexE2max + c2*amrexB2max);
+        Real compositeBmax = std::sqrt(amrexE2max/c2 + amrexB2max);
+
+        std::cout << "Full Step ||diff(E)|| <= " << diffEmax
+                  << " of ||E|| <= " << Emax
+                  << " relative " << (diffEmax / Emax)
+                  << std::endl;
+        std::cout << "Full Step ||diff(E)|| <= " << diffEmax
+                  << " of sqrt(||E||^2 + c^2*||B||^2) <= " << compositeEmax
+                  << " relative " << (diffEmax / compositeEmax)
+                  << std::endl;
+
+        std::cout << "Full Step ||diff(B)|| <= " << diffBmax
+                  << " of ||B|| <= " << Bmax
+                  << " relative " << (diffBmax / Bmax)
+                  << std::endl;
+        std::cout << "Full Step ||diff(B)|| <= " << diffBmax
+                  << " of sqrt(||E||^2/c^2 + ||B||^2) <= " << compositeBmax
+                  << " relative " << (diffBmax / compositeBmax)
+                  << std::endl;
 #endif
     }
 }
