@@ -16,9 +16,6 @@
 using namespace amrex;
 
 #if WARPX_USE_SPIRAL
-#include "warpx-symbol_rho_80.c"
-#include "warpx-symbol_norho_80.c"
-#include "warpx-fullstep-rho_80.c"
 #include "fftx3.hpp"
 #include "psatd.fftx.codegen.hpp"
 #endif
@@ -65,14 +62,6 @@ PsatdAlgorithm::pushSpectralFields(SpectralFieldData& f) const{
 
         const Box& bx = f.fields[mfi].box();
 
-#if WARPX_USE_SPIRAL
-        std::cout << "PsatdAlgorithm::pushSpectralFields"
-                  << " update_with_rho=" << update_with_rho
-                  << " box " << bx
-                  << " c = " << PhysConst::c
-                  << " ep0 = " << PhysConst::ep0
-                  << std::endl;
-#endif
         // Extract arrays for the fields to be updated
         Array4<Complex> fields = f.fields[mfi].array();
         // Extract arrays for the coefficients
@@ -88,40 +77,6 @@ PsatdAlgorithm::pushSpectralFields(SpectralFieldData& f) const{
 #endif
         const Real* modified_kz_arr = modified_kz_vec[mfi].dataPtr();
 
-#if WARPX_USE_SPIRAL
-        BaseFab<Complex> spiral_new(bx, 6);
-        // Array4<Complex> spiral_new4 = spiral_new.array();
-        // We are assuming fields in the SpectralFieldIndex order:
-        // Ex=0, Ey, Ez, Bx, By, Bz, Jx, Jy, Jz, rho_old, rho_new.
-        double** sym_for_psatd = new double*[8];
-        int xdim = bx.length(0);
-        int ydim = bx.length(1);
-        int zdim = bx.length(2);
-        int npts = bx.numPts();
-        std::cout << "Dimensions "
-                  << xdim << " " << ydim << " " << zdim
-                  << " Points " << npts
-                  << std::endl;
-        sym_for_psatd[0] = (double*) modified_kx_arr;
-        sym_for_psatd[1] = (double*) modified_ky_arr;
-        sym_for_psatd[2] = (double*) modified_kz_arr;
-        sym_for_psatd[3] = (double*) C_arr.dataPtr();
-        sym_for_psatd[4] = (double*) S_ck_arr.dataPtr();
-        sym_for_psatd[5] = (double*) X1_arr.dataPtr();
-        sym_for_psatd[6] = (double*) X2_arr.dataPtr();
-        sym_for_psatd[7] = (double*) X3_arr.dataPtr();
-        if (update_with_rho) {
-          init_warpxsym_rho_80();
-          warpxsym_rho_80((double*) spiral_new.dataPtr(),
-                          (double*) fields.dataPtr(),
-                          sym_for_psatd);
-        } else {
-          init_warpxsym_norho_80();
-          warpxsym_norho_80((double*) spiral_new.dataPtr(),
-                            (double*) fields.dataPtr(),
-                            sym_for_psatd);
-        }
-#endif
         // Loop over indices within one box
         ParallelFor( bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept
         {
@@ -196,50 +151,6 @@ PsatdAlgorithm::pushSpectralFields(SpectralFieldData& f) const{
 
             fields(i,j,k,Idx::Bz) = C*Bz_old - S_ck*I*(kx*Ey_old-ky*Ex_old) + X1*I*(kx*Jy-ky*Jx);
         } );
-
-#if WARPX_USE_SPIRAL
-        BaseFab<Complex> diff_new(bx, 6);
-        Array4<Complex> diff_new4 = diff_new.array();
-        const BaseFab<Complex> fields_new(fields);
-        // components: source, dest, number
-        diff_new.copy(fields_new, 0, 0, 6);
-        diff_new.minus(spiral_new, 0, 0, 6);
-        for (int icomp = 0; icomp < 6; icomp++)
-          {
-            // .norm(1, icomp) does not work.
-            Real soln_sum1 = 0.; // fields_new.norm(1, icomp);
-            Real diff_sum1 = 0.; // diff_new.norm(1, icomp);
-            Real soln_max = 0.;
-            Real diff_max = 0.;
-            // I don't want to use the GPU version, for race conditions.
-            const Dim3 lo = amrex::lbound(bx);
-            const Dim3 hi = amrex::ubound(bx);
-            for (int k = lo.z; k <= hi.z; ++k)
-              for (int j = lo.y; j <= hi.y; ++j)
-                for (int i = lo.x; i <= hi.x; ++i)
-                  {
-                    Real fields_new_abs = abs(fields(i, j, k, icomp));
-                    Real diff_new_abs = abs(diff_new4(i, j, k, icomp));
-                    soln_sum1 += fields_new_abs;
-                    diff_sum1 += diff_new_abs;
-                    if (fields_new_abs > soln_max)
-                      {
-                        soln_max = fields_new_abs;
-                      }
-                    if (diff_new_abs > diff_max)
-                      {
-                        diff_max = diff_new_abs;
-                      }
-                  }
-            // Real soln_avg = soln_sum1 / (npts * 1.);
-            std::cout << "Component " << icomp
-                      << " |diff| <= " << diff_max
-                      << " |solution| <= " << soln_max
-                      << " relative " << (diff_max/soln_max)
-                      << std::endl;
-          }
-        delete[] sym_for_psatd;
-#endif
     }
 };
 
@@ -311,14 +222,6 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
     FArrayBox& ByNewFab = (*BfieldNew[1])[mfi];
     FArrayBox& BzNewFab = (*BfieldNew[2])[mfi];
 
-    std::cout << "ExFab on " << ExFab.box() << std::endl;
-    std::cout << "EyFab on " << EyFab.box() << std::endl;
-    std::cout << "EzFab on " << EzFab.box() << std::endl;
-    std::cout << "BxFab on " << BxFab.box() << std::endl;
-    std::cout << "ByFab on " << ByFab.box() << std::endl;
-    std::cout << "BzFab on " << BzFab.box() << std::endl;
-
-    std::cout << "PsatdAlgorithm::stepSpiral allocating inputDataPtr" << std::endl;
     double** inputDataPtr = new double*[11];
     
     std::array<fftx::array_t<3,double>,11> inputArray = {alias(ExFab),alias(EyFab),alias(EzFab),
@@ -337,7 +240,6 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
     inputDataPtr[9] = (double*) rhoOldFab.dataPtr();
     inputDataPtr[10] = (double*) rhoNewFab.dataPtr();
 
-    std::cout << "PsatdAlgorithm::stepSpiral allocating outputDataPtr" << std::endl;
     double** outputDataPtr = new double*[6];
     std::array<fftx::array_t<3,double>,6> outputArray = {alias(ExNewFab),alias(EyNewFab),alias(EzNewFab),
                                                          alias(BxNewFab),alias(ByNewFab),alias(BzNewFab)};
@@ -349,7 +251,6 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
     outputDataPtr[4] = (double*) ByNewFab.dataPtr();
     outputDataPtr[5] = (double*) BzNewFab.dataPtr();
         
-    std::cout << "PsatdAlgorithm::stepSpiral allocating sym_for_psatd" << std::endl;
     double** sym_for_psatd = new double*[8];
     std::array<fftx::array_t<3,double>,8> symArray = {alias(modified_kx_vec[mfi]),
                                                       alias(modified_ky_vec[mfi]),
@@ -371,16 +272,7 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
     
     // Call the Spiral-generated C function here.
     if (update_with_rho) {
-      /*
-      std::cout << "Calling init_warpxfull_rho_80" << std::endl;
-      init_warpxfull_rho_80();
-      std::cout << "Calling warpxfull_rho_80" << std::endl;
-      warpxfull_rho_80(outputDataPtr, inputDataPtr, sym_for_psatd);
-      std::cout << "Called warpxfull_rho_80" << std::endl;
-      */
-      std::cout << "Calling psatd::transform" << std::endl;
       psatd::transform(inputArray, outputArray, symArray);
-      std::cout << "Called psatd::transform" << std::endl;
     } else {
     }
 

@@ -41,9 +41,6 @@ SpectralSolver::SpectralSolver(
                 const bool pml, const bool periodic_single_box,
                 const bool update_with_rho,
                 const bool fft_do_time_averaging) {
-#if WARPX_USE_SPIRAL
-  std::cout << "SpectralSolver nodal = " << nodal << std::endl;
-#endif
     // Initialize all structures using the same distribution mapping dm
 
     // - Initialize k space object (Contains info about the size of
@@ -90,63 +87,6 @@ SpectralSolver::ForwardTransform( const amrex::MultiFab& mf,
     WARPX_PROFILE("SpectralSolver::ForwardTransform");
     field_data.ForwardTransform( mf, field_index, i_comp );
 }
-
-#if WARPX_USE_SPIRAL
-void
-SpectralSolver::allForwardTransform(
-    std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
-    std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield,
-    std::array<std::unique_ptr< amrex::MultiFab >, 3>& current,
-    std::unique_ptr<amrex::MultiFab>& rho )
-{
-  WARPX_PROFILE("SpectralSolver::allForwardTransform");
-  field_data.allForwardTransform(Efield, Bfield, current, rho);
-}
-
-void
-SpectralSolver::compareSpiralForwardStep()
-{
-  field_data.compareSpiralForwardStep();
-}
-
-void
-SpectralSolver::scaleSpiralForward()
-{
-  field_data.scaleSpiralForward();
-}
-
-void
-SpectralSolver::setCopySpectralFieldBackward()
-{
-  field_data.setCopySpectralFieldBackward();
-}
-
-void
-SpectralSolver::scaleSpiralBackward()
-{
-  field_data.scaleSpiralBackward();
-}
-
-void
-SpectralSolver::allBackwardTransform(
-                                     std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
-                                     std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield)
-{
-  WARPX_PROFILE("SpectralSolver::allBackwardTransform");
-  field_data.allBackwardTransform(Efield, Bfield);
-}
-
-void
-SpectralSolver::compareSpiralBackwardStep(
-                                          std::array<std::unique_ptr< amrex::MultiFab >, 3>& EfieldBack,
-                                          std::array<std::unique_ptr< amrex::MultiFab >, 3>& BfieldBack,
-                                          std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
-                                          std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield)
-{
-  field_data.compareSpiralBackwardStep(EfieldBack, BfieldBack, Efield, Bfield);
-}
-
-#endif
 
 void
 SpectralSolver::BackwardTransform( amrex::MultiFab& mf,

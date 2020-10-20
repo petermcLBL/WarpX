@@ -56,35 +56,6 @@ class SpectralFieldData
         SpectralFieldData& operator=(SpectralFieldData&& field_data) = default;
         ~SpectralFieldData();
 
-#if WARPX_USE_SPIRAL
-  // Puts result of TResample + MDPRDFT into fieldsForward.
-  void allForwardTransform (
-                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
-                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield,
-                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& current,
-                            std::unique_ptr<amrex::MultiFab>& rho );
-
-  void scaleSpiralForward();
-
-  void setCopySpectralFieldBackward();
-
-  void scaleSpiralBackward();
-
-  void compareSpiralForwardStep();
-
-  // Puts result of IMDPRDFT + TResample into fieldsBackward.
-  void allBackwardTransform(
-                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
-                            std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield);
-
-  void compareSpiralBackwardStep(
-                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& EfieldBack,
-                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& BfieldBack,
-                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& Efield,
-                                 std::array<std::unique_ptr< amrex::MultiFab >, 3>& Bfield);
-
-#endif
-
         void ForwardTransform (const amrex::MultiFab& mf, const int field_index,
                                const int i_comp, const amrex::IntVect& stag);
         AMREX_FORCE_INLINE
@@ -102,13 +73,6 @@ class SpectralFieldData
         // tmpRealField and tmpSpectralField store fields
         // right before/after the Fourier transform
         SpectralField tmpSpectralField; // contains Complexs
-#if WARPX_USE_SPIRAL
-        SpectralField fieldsForward;
-        SpectralField fieldsBackward;
-        SpectralField copySpectralField;
-        SpectralField spiralFieldHatForward;
-        SpectralField copySpectralFieldBackward;
-#endif
         amrex::MultiFab tmpRealField; // contains Reals
         AnyFFT::FFTplans forward_plan, backward_plan;
         // Correcting "shift" factors when performing FFT from/to
