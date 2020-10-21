@@ -3,8 +3,8 @@ comment("right now I don't know what goes in a preamble");
 
 Load(packages.fftx);
 
-Import(packages.fftx, packages.fftx.baseline, fftx.baseline.nonterms,
-    fftx.baseline.breakdown, fftx.baseline.rewrite, fftx.baseline.sigma,
+Import(packages.fftx, fftx.nonterms,
+    fftx.breakdown, fftx.rewrite, fftx.sigma,
     filtering, realdft);
 
 # use the configuration for small mutidimensional real convolutions
