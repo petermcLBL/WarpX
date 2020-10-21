@@ -185,40 +185,10 @@ namespace {
               // components: source, dest, count
               diffFab.copy(EcompFab, 0, 0, 1);
               diffFab.minus(EcompNewFab, 0, 0, 1);
-              Array4<Real> amrexArray = EcompFab.array();
-              Array4<Real> spiralArray = EcompNewFab.array();
-              Array4<Real> diffArray = diffFab.array();
-              Real amrex_max = 0.;
-              Real spiral_max = 0.;
-              Real diff_max = 0.;
-              Real amrex2_sum = 0.;
-              Real spiral2_sum = 0.;
-              const Dim3 bxLo = amrex::lbound(bx);
-              const Dim3 bxHi = amrex::ubound(bx);          
-              for (int k = bxLo.z; k <= bxHi.z; ++k)
-                for (int j = bxLo.y; j <= bxHi.y; ++j)
-                  for (int i = bxLo.x; i <= bxHi.x; ++i)
-                    {
-                      Real amrex_val = amrexArray(i, j, k);
-                      Real spiral_val = spiralArray(i, j, k);
-                      Real amrex_abs = amrex::Math::abs(amrex_val);
-                      Real spiral_abs = amrex::Math::abs(spiral_val);
-                      amrex2_sum += amrex_abs * amrex_abs;
-                      spiral2_sum += spiral_abs * spiral_abs;
-                      if (amrex_abs > amrex_max)
-                        {
-                          amrex_max = amrex_abs;
-                        }
-                      if (spiral_abs > spiral_max)
-                        {
-                          spiral_max = spiral_abs;
-                        }
-                      Real diff_abs = amrex::Math::abs(diffArray(i, j, k));
-                      if (diff_abs > diff_max)
-                        {
-                          diff_max = diff_abs;
-                        }
-                    }
+              // 0 for max norm; CPU will ignore RunOn::Device
+              Real amrex_max = EcompFab.norm<RunOn::Device>(bx, 0);
+              Real spiral_max = EcompNewFab.norm<RunOn::Device>(bx, 0); 
+              Real diff_max = diffFab.norm<RunOn::Device>(bx, 0);
               amrexE2max += amrex_max * amrex_max;
               spiralE2max += spiral_max * spiral_max;
               diffE2max += diff_max * diff_max;
@@ -247,40 +217,10 @@ namespace {
               // components: source, dest, count
               diffFab.copy(BcompFab, 0, 0, 1);
               diffFab.minus(BcompNewFab, 0, 0, 1);
-              Array4<Real> amrexArray = BcompFab.array();
-              Array4<Real> spiralArray = BcompNewFab.array();
-              Array4<Real> diffArray = diffFab.array();
-              Real amrex_max = 0.;
-              Real spiral_max = 0.;
-              Real diff_max = 0.;
-              Real amrex2_sum = 0.;
-              Real spiral2_sum = 0.;
-              const Dim3 bxLo = amrex::lbound(bx);
-              const Dim3 bxHi = amrex::ubound(bx);          
-              for (int k = bxLo.z; k <= bxHi.z; ++k)
-                for (int j = bxLo.y; j <= bxHi.y; ++j)
-                  for (int i = bxLo.x; i <= bxHi.x; ++i)
-                    {
-                      Real amrex_val = amrexArray(i, j, k);
-                      Real spiral_val = spiralArray(i, j, k);
-                      Real amrex_abs = amrex::Math::abs(amrex_val);
-                      Real spiral_abs = amrex::Math::abs(spiral_val);
-                      amrex2_sum += amrex_abs * amrex_abs;
-                      spiral2_sum += spiral_abs * spiral_abs;
-                      if (amrex_abs > amrex_max)
-                        {
-                          amrex_max = amrex_abs;
-                        }
-                      if (spiral_abs > spiral_max)
-                        {
-                          spiral_max = spiral_abs;
-                        }
-                      Real diff_abs = amrex::Math::abs(diffArray(i, j, k));
-                      if (diff_abs > diff_max)
-                        {
-                          diff_max = diff_abs;
-                        }
-                    }
+              // 0 for max norm; CPU will ignore RunOn::Device
+              Real amrex_max = BcompFab.norm<RunOn::Device>(bx, 0);
+              Real spiral_max = BcompNewFab.norm<RunOn::Device>(bx, 0); 
+              Real diff_max = diffFab.norm<RunOn::Device>(bx, 0);
               amrexB2max += amrex_max * amrex_max;
               spiralB2max += spiral_max * spiral_max;
               diffB2max += diff_max * diff_max;

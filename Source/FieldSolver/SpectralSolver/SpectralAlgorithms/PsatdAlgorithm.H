@@ -37,7 +37,7 @@ class PsatdAlgorithm : public SpectralBaseAlgorithm
                           std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield_avg,
                           std::array<std::unique_ptr<amrex::MultiFab>,3>& Bfield_avg,
                           std::array<std::unique_ptr<amrex::MultiFab>,3>& current,
-                          std::unique_ptr<amrex::MultiFab>& rho );
+                          std::unique_ptr<amrex::MultiFab>& rho ) override;
 #endif
         virtual int getRequiredNumberOfFields() const override final {
             return SpectralFieldIndex::n_fields;
