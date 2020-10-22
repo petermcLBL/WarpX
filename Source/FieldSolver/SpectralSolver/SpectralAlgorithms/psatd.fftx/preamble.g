@@ -1,11 +1,8 @@
 
 comment("right now I don't know what goes in a preamble");
 
-Load(packages.fftx);
-
-Import(packages.fftx, fftx.nonterms,
-    fftx.breakdown, fftx.rewrite, fftx.sigma,
-    filtering, realdft);
+Load(fftx);
+ImportAll(fftx);
 
 # use the configuration for small mutidimensional real convolutions
 # later we will have to auto-derive the correct options class
