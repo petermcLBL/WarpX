@@ -61,6 +61,8 @@ class SpectralSolver
         void pushSpectralFields();
 
 #if WARPX_USE_FULL_SPIRAL
+  void writeSymbolsBinary();
+  
   void stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& EfieldNew,
                   std::array<std::unique_ptr<amrex::MultiFab>,3>& BfieldNew,
                   std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield,

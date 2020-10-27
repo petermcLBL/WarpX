@@ -170,6 +170,24 @@ fftx::array_t<3, double> alias(amrex::PODVector<double>& v)
   return fftx::array_t<3,double>(fftx::global_ptr<double>(v.dataPtr(), 0,0),b2);
 }
 
+void
+PsatdAlgorithm::writeSymbolsBinary() {
+  // Loop over boxes
+  for (MFIter mfi(C_coef); mfi.isValid(); ++mfi){
+      std::cout << "Writing sym.bin with kx, ky, kz, C, S_ck, X1, X2, X3" << std::endl;
+      std::ofstream os("sym.bin", std::ios::binary);
+      writeRealKVectorBinary(os, modified_kx_vec[mfi]);
+      writeRealKVectorBinary(os, modified_ky_vec[mfi]);
+      writeRealKVectorBinary(os, modified_kz_vec[mfi]);
+      writeBaseFabRealBinary(os, C_coef[mfi]);
+      writeBaseFabRealBinary(os, S_ck_coef[mfi]);
+      writeBaseFabRealBinary(os, X1_coef[mfi]);
+      writeBaseFabRealBinary(os, X2_coef[mfi]);
+      writeBaseFabRealBinary(os, X3_coef[mfi]);
+      os.close();
+  }
+}
+
 /**
  * \brief Advance E and B fields in spectral space (stored in `f`) over one time step
  */
@@ -269,7 +287,6 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
     sym_for_psatd[6] = (double*) X2_arr.dataPtr();
     sym_for_psatd[7] = (double*) X3_arr.dataPtr();
 
-    
     // Call the Spiral-generated C function here.
     if (update_with_rho) {
       psatd::transform(inputArray, outputArray, symArray);
@@ -281,6 +298,29 @@ PsatdAlgorithm::stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efiel
     delete[] outputDataPtr;
   }
 }
+
+void PsatdAlgorithm::writeBaseFabRealBinary(std::ofstream& os,
+                                            const amrex::BaseFab<amrex::Real>& fab)
+{
+  size_t num_bytes = fab.nComp() * fab.numPts() * sizeof(amrex::Real);
+  //  std::cout << "writeBaseFabRealBinary "
+  //            << fab.box() << " "
+  //            << fab.nComp() << " comps "
+  //            << fab.numPts() << " points "
+  //            << num_bytes << " bytes" << std::endl;
+  os.write((char *) fab.dataPtr(), num_bytes);
+}
+                                    
+void PsatdAlgorithm::writeRealKVectorBinary(std::ofstream& os,
+                                            const RealKVector& vec)
+{
+  size_t num_bytes = vec.size() * sizeof(amrex::Real);
+  //  std::cout << "writeRealKVectorBinary "
+  //            << vec.size() << " points "
+  //            << num_bytes << " bytes" << std::endl;
+  os.write((char *) vec.dataPtr(), num_bytes);
+}
+                                    
 #endif
 
 

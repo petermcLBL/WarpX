@@ -27,6 +27,51 @@ using namespace amrex;
 
 #ifdef WARPX_USE_PSATD
 namespace {
+#if WARPX_USE_FULL_SPIRAL
+  void writeFArrayBoxBinary(std::ofstream& os,
+                            const amrex::BaseFab<amrex::Real>& fab)
+  {
+    size_t num_bytes = fab.nComp() * fab.numPts() * sizeof(amrex::Real);
+    //  std::cout << "writeFArrayBoxBinary "
+    //            << fab.box() << " "
+    //            << fab.nComp() << " comps "
+    //            << fab.numPts() << " points "
+    //            << num_bytes << " bytes" << std::endl;
+    os.write((char *) fab.dataPtr(), num_bytes);
+  }
+     
+  /**
+   * \brief Write out input.bin
+   */
+  void writeInputsBinary(std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield,
+                         std::array<std::unique_ptr<amrex::MultiFab>,3>& Bfield,
+                         std::array<std::unique_ptr<amrex::MultiFab>,3>& current,
+                         std::unique_ptr<amrex::MultiFab>& rho) {
+    // Loop over boxes
+    for (MFIter mfi(*rho); mfi.isValid(); ++mfi){
+      std::cout << "Writing input.bin with input E, B, J, rho" << std::endl;
+      std::ofstream os("input.bin", std::ios::binary);
+      for (int idir = 0; idir < 3; idir++)
+        {
+          writeFArrayBoxBinary(os, (*Efield[idir])[mfi]);
+        }
+      for (int idir = 0; idir < 3; idir++)
+        {
+          writeFArrayBoxBinary(os, (*Bfield[idir])[mfi]);
+        }
+      for (int idir = 0; idir < 3; idir++)
+        {
+          writeFArrayBoxBinary(os, (*current[idir])[mfi]);
+        }
+      for (int t = 0; t <= 1; t++)
+        {
+          writeFArrayBoxBinary(os, (*rho)[mfi]);
+        }
+      os.close();
+    }
+  }
+#endif
+  
     void
     PushPSATDSinglePatch (
 #ifdef WARPX_DIM_RZ
@@ -68,6 +113,8 @@ namespace {
                                                 Bfield[idir]->nComp(),
                                             -4 ));
           }
+        solver.writeSymbolsBinary();
+        writeInputsBinary(Efield, Bfield, current, rho);
         solver.stepSpiral(EfieldNew, BfieldNew,
                           Efield, Bfield, Efield_avg, Bfield_avg, current, rho);
 #endif
@@ -137,10 +184,34 @@ namespace {
             solver.BackwardTransform(*Bfield_avg[1], Idx::By_avg);
             solver.BackwardTransform(*Bfield_avg[2], Idx::Bz_avg);
         }
+
+        
 #endif
 
 
 #if WARPX_USE_FULL_SPIRAL
+        std::cout << "Writing output.bin with WarpX output E, B" << std::endl;
+        std::ofstream os("output.bin", std::ios::binary);
+        for (int idir = 0; idir < 3; idir++)
+          {
+            std::unique_ptr< amrex::MultiFab >& Ecomp = Efield[idir];
+            for ( MFIter mfi(*Ecomp); mfi.isValid(); ++mfi ){
+              BaseFab<Real>& EcompFab = (*Ecomp)[mfi];
+              os.write((char *) EcompFab.dataPtr(),
+                       EcompFab.numPts() * sizeof(amrex::Real));
+            }
+          }
+        for (int idir = 0; idir < 3; idir++)
+          {
+            std::unique_ptr< amrex::MultiFab >& Bcomp = Bfield[idir];
+            for ( MFIter mfi(*Bcomp); mfi.isValid(); ++mfi ){
+              BaseFab<Real>& BcompFab = (*Bcomp)[mfi];
+              os.write((char *) BcompFab.dataPtr(),
+                       BcompFab.numPts() * sizeof(amrex::Real));
+            }
+          }
+        os.close();
+
         /*
         //auto G = WarpX::GetInstance().Geom(0);
         //Geometry G = Geometry(Box({0,0,0},{63,64,64}),RealBox({-1,-1,-1},{1,1,1}),
@@ -168,6 +239,7 @@ namespace {
 
         istep++;
         */
+
         // Find differences between Efield and EfieldNew.
         Real amrexE2max = 0.;
         Real spiralE2max = 0.;
@@ -195,11 +267,12 @@ namespace {
               std::cout << "Full step |diff(E" << idir << ")| <= "
                         << diff_max
                         << " |solution| <= " << amrex_max
+                        << " box " << bx
                         << " relative " << (diff_max/amrex_max)
                         << std::endl;
             }
           }
-        
+
         // Find differences between Bfield and BfieldNew.
         Real amrexB2max = 0.;
         Real spiralB2max = 0.;
@@ -227,11 +300,12 @@ namespace {
               std::cout << "Full step |diff(B" << idir << ")| <= "
                         << diff_max
                         << " |solution| <= " << amrex_max
+                        << " box " << bx
                         << " relative " << (diff_max/amrex_max)
                         << std::endl;
             }
           }
-
+        
         Real diffEmax = std::sqrt(diffE2max);
         Real diffBmax = std::sqrt(diffB2max);
         Real Emax = std::sqrt(amrexE2max);
@@ -259,6 +333,7 @@ namespace {
                   << std::endl;
 #endif
     }
+
 }
 
 void

@@ -28,6 +28,10 @@ class SpectralBaseAlgorithm
         virtual void pushSpectralFields(SpectralFieldData& f) const = 0;
 #if WARPX_USE_FULL_SPIRAL
   // Set this function to blank instead of =0, because only PSATD has it.
+  virtual void writeSymbolsBinary()
+  {};
+  
+  // Set this function to blank instead of =0, because only PSATD has it.
         virtual void stepSpiral(std::array<std::unique_ptr<amrex::MultiFab>,3>& EfieldNew,
                                 std::array<std::unique_ptr<amrex::MultiFab>,3>& BfieldNew,
                                 std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield,
