@@ -63,10 +63,7 @@ namespace {
         {
           writeFArrayBoxBinary(os, (*current[idir])[mfi]);
         }
-      for (int t = 0; t <= 1; t++)
-        {
-          writeFArrayBoxBinary(os, (*rho)[mfi]);
-        }
+      writeFArrayBoxBinary(os, (*rho)[mfi]); // has 2 components
       os.close();
     }
   }
