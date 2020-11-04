@@ -24,9 +24,15 @@ include_directories ( ${CMAKE_SOURCE_DIR} "Utils"  )
 
 ##  Setup compilation flags
 
-set ( CUDA_COMPILE_FLAGS -m64 -rdc=true )
-set ( GPU_COMPILE_DEFNS -dc )		##   -Xptxas -v
-set ( LIBS_FOR_CUDA cufft_static culibos )
+if (WIN32)
+    set ( CUDA_COMPILE_FLAGS -rdc=false )
+    set ( GPU_COMPILE_DEFNS )			## -Xptxas -v
+    set ( LIBS_FOR_CUDA cufft )
+else ()
+    set ( CUDA_COMPILE_FLAGS -m64 -rdc=true )
+    set ( GPU_COMPILE_DEFNS -dc )		## -Xptxas -v
+    set ( LIBS_FOR_CUDA cufft_static culibos )
+endif ()
 
 ##  set ( CMAKE_CUDA_ARCHITECTURES 60 61 62 70 72 75 )
 set ( CMAKE_CUDA_ARCHITECTURES 70 )
